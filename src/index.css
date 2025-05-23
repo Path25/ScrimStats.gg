@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%; /* Primary Purple from palette. Assuming this is a dark theme primary */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%; /* A light gray, might need adjustment */
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 72.2% 50.6%; /* Red from palette */
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%; /* Focus ring, often same as primary or a distinct color */
+    --radius: 0.5rem;
+
+    /* Custom Palette Variables (from design system, ensure they are here or defined) */
+    --palette-purple-primary: 258 73% 60%; /* #9b87f5 */
+    --palette-purple-secondary: 258 73% 75%; /* #b9a7f8 */
+    --palette-purple-tertiary: 258 73% 90%; /* #e0d7fc */
+    --palette-blue: 210 100% 56%; /* #1f88ff */
+    --palette-green: 145 63% 49%; /* #4caf50 */
+    --palette-yellow: 48 100% 50%; /* #ffc107 */
+    --palette-red: 0 72% 51%; /* #ea384c */
+    --palette-neutral-dark: 220 13% 13%; /* #1d2025 - Scrim Card Background */
+    --palette-neutral-medium: 220 9% 46%; /* #6c727e - Muted Foreground */
+    --palette-neutral-light: 220 14% 96%; /* #f3f4f6 - Background */
+    --palette-neutral-extralight: 0 0% 100%; /* #ffffff - Card Background */
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%; /* Dark card background */
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%; /* Primary for dark could be a light color */
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%; /* Accent for dark mode */
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%; /* Darker red */
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 0 0% 98%; /* Focus ring for dark mode */
+
+    /* Example: Using palette for dark theme overrides specifically */
+    /* --background: var(--palette-neutral-dark); */
+    /* --foreground: var(--palette-neutral-light); */
+    /* --card: var(--palette-neutral-medium); */
+    /* --card-foreground: var(--palette-neutral-extralight); */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Style for calendar days with events */
+.day-has-event {
+  position: relative;
+}
+.day-has-event > .rdp-button_reset.rdp-button { /* Target the actual button inside the cell */
+  font-weight: bold; /* Make the day number bold if it has an event */
+}
+.day-has-event::after {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary)); /* Use primary color for the dot */
+  position: absolute;
+  bottom: 4px; /* Adjust as needed */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1; /* Ensure dot is visible */
+}
+
+/* Ensure scrim-card uses the custom palette variable */
+.scrim-card {
+  background-color: hsl(var(--palette-neutral-dark) / 0.8); /* Darker, slightly transparent */
+  border-color: hsl(var(--palette-neutral-medium) / 0.3);
+  color: hsl(var(--palette-neutral-extralight)); /* Ensure text is light on dark background */
+}
+.scrim-card .text-muted-foreground {
+  color: hsl(var(--palette-neutral-medium));
+}
+.scrim-card .text-foreground {
+   color: hsl(var(--palette-neutral-extralight));
+}
+.scrim-card .bg-popover { /* For calendar inside a scrim-card */
+  background-color: hsl(var(--palette-neutral-dark) / 0.95) !important;
+  color: hsl(var(--palette-neutral-extralight)) !important;
+}
+.scrim-card .text-popover-foreground {
+   color: hsl(var(--palette-neutral-extralight)) !important;
+}
+.scrim-card .border { /* For calendar border inside */
+  border-color: hsl(var(--palette-neutral-medium) / 0.5) !important;
+}
+
+/* Ensure dialogs and selects inside scrim-card or on dark theme are styled correctly */
+.dark .bg-card, .scrim-card .bg-card,
+.dark .bg-input, .scrim-card .bg-input,
+.dark .bg-select, .scrim-card .bg-select, /* Assuming select might need explicit styling */
+.dark .bg-popover, .scrim-card .bg-popover /* For SelectContent dropdown */
+ {
+  background-color: hsl(var(--palette-neutral-dark)) !important;
+  color: hsl(var(--palette-neutral-extralight)) !important;
+}
+
+.dark .text-foreground, .scrim-card .text-foreground {
+  color: hsl(var(--palette-neutral-extralight)) !important;
+}
+.dark .text-muted-foreground, .scrim-card .text-muted-foreground {
+  color: hsl(var(--palette-neutral-medium)) !important;
+}
+.dark .border, .scrim-card .border {
+   border-color: hsl(var(--palette-neutral-medium) / 0.5) !important;
+}
+
+/* Specific fixes for CreateEventDialog when on dark background */
+.scrim-card .bg-input,
+.scrim-card .text-right.text-foreground /* Label */
+ {
+  background-color: hsl(var(--palette-neutral-medium) / 0.2) !important; /* Input background */
+  color: hsl(var(--palette-neutral-extralight)) !important; /* Text color */
+}
+.scrim-card .col-span-3.bg-input { /* SelectTrigger */
+  background-color: hsl(var(--palette-neutral-medium) / 0.2) !important;
+}
