@@ -13,19 +13,14 @@ const Index: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Placeholder: In a real app, check auth status here or rely on App.tsx's ProtectedRoute
-    // For now, App.tsx handles redirection from "/"
-    // If this component IS rendered, it means redirection logic in App.tsx might need review
-    // or this page could be a very minimal loading/splash screen.
+    // Since Supabase is now directly configured, let normal routing handle redirection
     console.log("Index.tsx rendered - check App.tsx for root path ('/') handling.");
-    // Fallback redirect if somehow reached:
-    // navigate('/login'); // Or based on auth status
   }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-primary mb-4">ScrimStats Pro</h1>
+        <h1 className="text-3xl font-bold text-primary mb-4">ScrimStats.gg</h1>
         <p className="text-lg text-muted-foreground">Loading your experience...</p>
         {/* Optional: Add a loading spinner */}
       </div>

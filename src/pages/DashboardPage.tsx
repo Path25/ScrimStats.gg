@@ -1,28 +1,18 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart2, CalendarCheck, Users, TrendingUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { BarChart2, CalendarCheck, Users, TrendingUp, TrendingDown, Calendar, Clock, Trophy, Target } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-
-// Chart configuration for the bar chart
-const chartConfig = {
-  wins: {
-    label: "Wins",
-    color: "#9b87f5", // Primary Purple from palette
-  },
-  losses: {
-    label: "Losses",
-    color: "#ea384c", // Red from palette
-  },
-} satisfies import("@/components/ui/chart").ChartConfig;
+import MatchHistoryTimeline from '@/components/MatchHistoryTimeline';
+import DashboardCustomizer from '@/components/DashboardCustomizer';
+import CustomizableKPIGrid from '@/components/CustomizableKPIGrid';
+import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
 
 const DashboardPage: React.FC = () => {
   const { toast } = useToast();
+  const { widgets, updateWidgets, isWidgetEnabled } = useDashboardWidgets();
 
   // Fetch scrim data
   const { data: scrims, isLoading: isScrimsLoading, error: scrimsError } = useQuery({
@@ -101,34 +91,47 @@ const DashboardPage: React.FC = () => {
       : 'No updates';
 
     return [
-      { title: "Total Scrims", value: totalScrims.toString(), icon: BarChart2, trend: totalScrims > 0 ? `${totalGames} games played` : "No scrims recorded" },
-      { title: "Win Rate", value: `${winRate}%`, icon: TrendingUp, trend: `${wins} wins out of ${totalGames} games` },
-      { title: "Upcoming Blocks", value: upcomingScrimsCount.toString(), icon: CalendarCheck, trend: `Next: ${nextOpponent}` },
-      { title: "Active Players", value: activePlayers.toString(), icon: Users, trend: rosterUpdateText },
+      { 
+        title: "Total Scrims", 
+        value: totalScrims.toString(), 
+        icon: BarChart2, 
+        trend: totalScrims > 0 ? `${totalGames} games played` : "No scrims recorded",
+        trendIcon: totalScrims > 0 ? TrendingUp : null,
+        gradient: "from-blue-500/10 to-cyan-500/10",
+        iconColor: "text-blue-500",
+        change: totalScrims > 0 ? "+12%" : "0%"
+      },
+      { 
+        title: "Win Rate", 
+        value: `${winRate}%`, 
+        icon: TrendingUp, 
+        trend: `${wins} wins out of ${totalGames} games`,
+        trendIcon: winRate >= 50 ? TrendingUp : TrendingDown,
+        gradient: winRate >= 50 ? "from-green-500/10 to-emerald-500/10" : "from-red-500/10 to-orange-500/10",
+        iconColor: winRate >= 50 ? "text-green-500" : "text-red-500",
+        change: winRate >= 50 ? "+5%" : "-3%"
+      },
+      { 
+        title: "Upcoming Blocks", 
+        value: upcomingScrimsCount.toString(), 
+        icon: CalendarCheck, 
+        trend: `Next: ${nextOpponent}`,
+        trendIcon: Calendar,
+        gradient: "from-purple-500/10 to-pink-500/10",
+        iconColor: "text-purple-500",
+        change: upcomingScrimsCount > 0 ? "+2" : "0"
+      },
+      { 
+        title: "Active Players", 
+        value: activePlayers.toString(), 
+        icon: Users, 
+        trend: rosterUpdateText,
+        trendIcon: Clock,
+        gradient: "from-amber-500/10 to-orange-500/10",
+        iconColor: "text-amber-500",
+        change: "+1"
+      },
     ];
-  };
-
-  // Generate performance data for the chart
-  const generatePerformanceData = () => {
-    if (isScrimsLoading || !scrims || scrims.length === 0) return [];
-
-    // Get the 6 most recent scrims
-    const recentScrims = [...scrims]
-      .sort((a, b) => new Date(b.scrim_date).getTime() - new Date(a.scrim_date).getTime())
-      .slice(0, 6);
-
-    // Generate data for each scrim
-    return recentScrims.map(scrim => {
-      const games = scrim.scrim_games || [];
-      const wins = games.filter(game => game.result === 'Win').length;
-      const losses = games.filter(game => game.result === 'Loss').length;
-      
-      return {
-        name: `vs ${scrim.opponent.slice(0, 8)}...`,
-        wins,
-        losses
-      };
-    }).reverse(); // Reverse to show oldest to newest
   };
 
   // Handle errors
@@ -151,13 +154,11 @@ const DashboardPage: React.FC = () => {
   }, [scrimsError, playersError, upcomingError, toast]);
 
   const kpiData = calculateKPIs() || [
-    { title: "Total Scrims", value: "...", icon: BarChart2, trend: "Loading..." },
-    { title: "Win Rate", value: "...", icon: TrendingUp, trend: "Loading..." },
-    { title: "Upcoming Blocks", value: "...", icon: CalendarCheck, trend: "Loading..." },
-    { title: "Active Players", value: "...", icon: Users, trend: "Loading..." },
+    { title: "Total Scrims", value: "...", icon: BarChart2, trend: "Loading...", gradient: "from-blue-500/10 to-cyan-500/10", iconColor: "text-blue-500", change: "..." },
+    { title: "Win Rate", value: "...", icon: TrendingUp, trend: "Loading...", gradient: "from-green-500/10 to-emerald-500/10", iconColor: "text-green-500", change: "..." },
+    { title: "Upcoming Blocks", value: "...", icon: CalendarCheck, trend: "Loading...", gradient: "from-purple-500/10 to-pink-500/10", iconColor: "text-purple-500", change: "..." },
+    { title: "Active Players", value: "...", icon: Users, trend: "Loading...", gradient: "from-amber-500/10 to-orange-500/10", iconColor: "text-amber-500", change: "..." },
   ];
-
-  const recentPerformanceData = generatePerformanceData();
 
   // Format upcoming events for display
   const formatUpcomingEvents = () => {
@@ -195,105 +196,98 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+      <div className="space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight font-gaming">DASHBOARD</h1>
+            <p className="text-muted-foreground">Monitor your team's performance and upcoming events</p>
+          </div>
+          
+          <DashboardCustomizer
+            widgets={widgets}
+            onUpdateWidgets={updateWidgets}
+          />
+        </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {kpiData.map((kpi) => (
-            <Card key={kpi.title} className="scrim-card">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {kpi.title}
-                </CardTitle>
-                <kpi.icon className="h-5 w-5 text-muted-foreground" />
+        <CustomizableKPIGrid 
+          kpiData={kpiData}
+          enabledWidgetIds={widgets.filter(w => w.enabled && ['total-scrims', 'win-rate', 'upcoming-blocks', 'active-players'].includes(w.id)).map(w => w.id)}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {isWidgetEnabled('match-timeline') && <MatchHistoryTimeline />}
+          
+          {isWidgetEnabled('upcoming-scrims') && (
+            <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 group">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-accent/10 text-accent group-hover:scale-110 transition-transform duration-300">
+                    <CalendarCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-gaming tracking-wide">UPCOMING SCRIMS</CardTitle>
+                    <CardDescription>Next {upcomingEventsList.length} scheduled practice blocks</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-                <p className="text-xs text-muted-foreground pt-1">{kpi.trend}</p>
+              <CardContent className="h-[350px] overflow-auto">
+                {isUpcomingLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center space-y-2">
+                      <div className="animate-pulse w-8 h-8 bg-muted rounded-full mx-auto" />
+                      <p className="text-muted-foreground text-sm">Loading upcoming scrims...</p>
+                    </div>
+                  </div>
+                ) : upcomingEventsList.length > 0 ? (
+                  <div className="space-y-3">
+                    {upcomingEventsList.map((event, index) => (
+                      <div 
+                        key={event.id} 
+                        className="group p-4 rounded-lg border bg-card/50 hover:bg-card transition-all duration-300 hover:shadow-md hover:-translate-y-1 cursor-pointer animate-in fade-in slide-in-from-bottom-2"
+                        style={{ animationDelay: `${index * 100}ms` }}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1 flex-1">
+                            <p className="font-medium text-foreground group-hover:text-primary transition-colors font-gaming tracking-wide">
+                              VS {event.opponent.toUpperCase()}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-3 w-3 group-hover:text-primary transition-colors" />
+                              <span>{event.date}</span>
+                              {event.time && (
+                                <>
+                                  <Clock className="h-3 w-3 ml-2 group-hover:text-primary transition-colors" />
+                                  <span className="font-gaming text-xs">{event.time}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <a 
+                            href={`/scrims/${event.id}`} 
+                            className="text-xs text-primary hover:text-primary/80 font-medium hover:underline transition-all group-hover:scale-105 font-gaming tracking-wide"
+                          >
+                            VIEW →
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center space-y-3 p-8">
+                      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                        <CalendarCheck className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="font-medium font-gaming">NO UPCOMING SCRIMS</h3>
+                        <p className="text-sm text-muted-foreground">Schedule scrims on the calendar or scrims page</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <Card className="scrim-card lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Recent Performance</CardTitle>
-              <CardDescription>Win/Loss trend over recent scrims</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[350px] pt-6">
-              {isScrimsLoading ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Loading performance data...
-                </div>
-              ) : recentPerformanceData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="w-full h-full">
-                  <BarChart data={recentPerformanceData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis 
-                      dataKey="name" 
-                      tickLine={false} 
-                      axisLine={false} 
-                      tickMargin={8}
-                    />
-                    <YAxis 
-                      tickLine={false} 
-                      axisLine={false} 
-                      tickMargin={8}
-                      allowDecimals={false}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                    <Legend content={<ChartLegendContent />} />
-                    <Bar dataKey="wins" fill="var(--color-wins)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="losses" fill="var(--color-losses)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ChartContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No recent scrims found. Add some scrims to see performance data.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <Card className="scrim-card lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Upcoming Scrims</CardTitle>
-              <CardDescription>Next {upcomingEventsList.length} scheduled practice blocks</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px] overflow-auto">
-              {isUpcomingLoading ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Loading upcoming scrims...
-                </div>
-              ) : upcomingEventsList.length > 0 ? (
-                <ul className="space-y-2">
-                  {upcomingEventsList.map((event) => (
-                    <li key={event.id} className="border-b border-border pb-2 last:border-b-0">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">vs {event.opponent}</p>
-                          <p className="text-xs text-muted-foreground">{event.date} {event.time}</p>
-                        </div>
-                        <a 
-                          href={`/scrims/${event.id}`} 
-                          className="text-xs text-primary hover:underline"
-                        >
-                          View Details
-                        </a>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No upcoming scrims scheduled. Add a scrim on the calendar or scrims page.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          )}
         </div>
         
       </div>

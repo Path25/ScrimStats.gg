@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,7 +25,6 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
-
 
 const LoginPage: React.FC = () => {
   const { toast } = useToast();
@@ -67,7 +65,6 @@ const LoginPage: React.FC = () => {
     }
   }
 
-  // JSX remains largely the same
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="absolute top-4 right-4">
@@ -75,7 +72,7 @@ const LoginPage: React.FC = () => {
       </div>
       <Card className="w-full max-w-md shadow-soft-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-primary">ScrimStats Pro</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">ScrimStats.gg</CardTitle>
           <CardDescription>Log in to manage your team's scrims</CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -125,7 +122,7 @@ const LoginPage: React.FC = () => {
         </Form>
       </Card>
        <p className="mt-8 text-sm text-muted-foreground">
-        © {new Date().getFullYear()} ScrimStats Pro. For demo purposes.
+        © {new Date().getFullYear()} ScrimStats.gg. For demo purposes.
       </p>
     </div>
   );

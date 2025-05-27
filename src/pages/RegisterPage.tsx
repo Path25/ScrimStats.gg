@@ -92,7 +92,7 @@ const RegisterPage: React.FC = () => {
       <Card className="w-full max-w-md shadow-soft-md">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-primary">Create Account</CardTitle>
-          <CardDescription>Join ScrimStats Pro to manage your team</CardDescription>
+          <CardDescription>Join ScrimStats.gg to manage your team</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -180,7 +180,7 @@ const RegisterPage: React.FC = () => {
         </Form>
       </Card>
       <p className="mt-8 text-sm text-muted-foreground">
-        © {new Date().getFullYear()} ScrimStats Pro. For demo purposes.
+        © {new Date().getFullYear()} ScrimStats.gg. For demo purposes.
       </p>
     </div>
   );

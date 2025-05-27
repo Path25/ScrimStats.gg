@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
@@ -96,28 +95,25 @@ const ApiTokenManager: React.FC = () => {
 
   const API_ENDPOINT_URL = useMemo(() => {
     let endpoint = "";
-    const supabaseUrlFromEnv = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
-    if (supabaseUrlFromEnv) {
+    if (supabaseUrl) {
       try {
-        const url = new URL(supabaseUrlFromEnv);
+        const url = new URL(supabaseUrl);
         const projectId = url.hostname.split('.')[0];
-        if (projectId) {
+        if (projectId && projectId !== 'your-project-id') {
           endpoint = `https://${projectId}.supabase.co/functions/v1/receive-game-stats`;
         } else {
-          console.warn("ApiTokenManager: Could not parse Supabase project ID from VITE_SUPABASE_URL. API endpoint for desktop app will be blank.");
+          console.warn("ApiTokenManager: Supabase project ID is not configured properly. Please update VITE_SUPABASE_URL.");
         }
       } catch (e) {
-        console.error("ApiTokenManager: VITE_SUPABASE_URL is not a valid URL. API endpoint for desktop app will be blank.", e);
+        console.error("ApiTokenManager: VITE_SUPABASE_URL is not a valid URL. Please check your environment configuration.", e);
       }
     } else {
-      // VITE_SUPABASE_URL is not set. Endpoint remains blank.
-      // Supabase client init will likely throw an error elsewhere if it's critical for other operations.
-      console.info("ApiTokenManager: VITE_SUPABASE_URL is not set. API endpoint for desktop app will be blank.");
+      console.info("ApiTokenManager: VITE_SUPABASE_URL is not set. Please configure your Supabase environment variables.");
     }
     return endpoint;
   }, []);
-
 
   useEffect(() => {
     if (user && !isAdmin && !isCoach) {
@@ -353,7 +349,7 @@ const ApiTokenManager: React.FC = () => {
                   value={API_ENDPOINT_URL} 
                   className="mt-1 text-xs flex-grow bg-background"
                   aria-label="API Endpoint URL"
-                  placeholder={!API_ENDPOINT_URL ? "Supabase not configured" : ""}
+                  placeholder={!API_ENDPOINT_URL ? "Please configure VITE_SUPABASE_URL" : ""}
                 />
                 {API_ENDPOINT_URL && (
                   <Button variant="outline" size="icon" onClick={() => handleCopyToClipboard(API_ENDPOINT_URL, 'Endpoint URL')} aria-label="Copy API Endpoint URL">
@@ -367,7 +363,7 @@ const ApiTokenManager: React.FC = () => {
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground mt-2">
-                  The API endpoint URL will appear here once Supabase is configured with a VITE_SUPABASE_URL environment variable.
+                  The API endpoint URL will appear here once you configure your Supabase environment variables (VITE_SUPABASE_URL).
                 </p>
               )}
             </div>

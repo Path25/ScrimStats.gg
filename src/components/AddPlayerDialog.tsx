@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -107,25 +108,29 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ onPlayerAdd, children
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-card text-card-foreground scrim-card">
-        <DialogHeader>
-          <DialogTitle>Add New Player</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[480px] bg-card text-card-foreground border border-border/50 shadow-lg">
+        <DialogHeader className="space-y-3 pb-6">
+          <DialogTitle className="text-xl font-semibold text-foreground">Add New Player</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Fill in the details below to add a new player to your roster.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={control}
               name="summonerName"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Summoner Name</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Summoner Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., ProGamer123" {...field} className="bg-input text-foreground placeholder:text-muted-foreground" />
+                    <Input 
+                      placeholder="e.g., ProGamer123" 
+                      {...field} 
+                      className="h-11 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors" 
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -133,12 +138,16 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ onPlayerAdd, children
               control={control}
               name="role"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Role</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Top, Mid, ADC" {...field} className="bg-input text-foreground placeholder:text-muted-foreground" />
+                    <Input 
+                      placeholder="e.g., Top, Mid, ADC" 
+                      {...field} 
+                      className="h-11 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors" 
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -146,12 +155,16 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ onPlayerAdd, children
               control={control}
               name="teamTag"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Team Tag</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Team Tag</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., SSP" {...field} className="bg-input text-foreground placeholder:text-muted-foreground" />
+                    <Input 
+                      placeholder="e.g., SSP" 
+                      {...field} 
+                      className="h-11 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors" 
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -159,8 +172,8 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ onPlayerAdd, children
               control={control}
               name="linkedProfileId"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Link to User (Optional)</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Link to User (Optional)</FormLabel>
                   <Select 
                     onValueChange={(selectedValue) => {
                       if (selectedValue === NULL_PROFILE_ID_VALUE) {
@@ -173,28 +186,28 @@ const AddPlayerDialog: React.FC<AddPlayerDialogProps> = ({ onPlayerAdd, children
                     disabled={profilesLoading}
                   >
                     <FormControl>
-                      <SelectTrigger className="bg-input text-foreground">
+                      <SelectTrigger className="h-11 bg-input border-border/50 text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
                         <SelectValue placeholder={profilesLoading ? "Loading users..." : "Select a user to link"} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent className="bg-popover text-popover-foreground">
-                      <SelectItem value={NULL_PROFILE_ID_VALUE}>None</SelectItem> 
+                    <SelectContent className="bg-popover border-border/50 text-popover-foreground">
+                      <SelectItem value={NULL_PROFILE_ID_VALUE} className="hover:bg-muted/50">None</SelectItem> 
                       {profiles?.map((profile) => (
-                        <SelectItem key={profile.id} value={profile.id}>
+                        <SelectItem key={profile.id} value={profile.id} className="hover:bg-muted/50">
                           {profile.full_name || profile.ign || profile.id}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <DialogFooter className="pt-6 gap-3">
               <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
+                <Button type="button" variant="outline" className="h-10 px-6">Cancel</Button>
               </DialogClose>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="h-10 px-6">
                 {isSubmitting ? "Adding..." : "Add Player"}
               </Button>
             </DialogFooter>

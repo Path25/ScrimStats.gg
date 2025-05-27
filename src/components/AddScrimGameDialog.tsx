@@ -154,25 +154,30 @@ const AddScrimGameDialog: React.FC<AddScrimGameDialogProps> = ({ scrimId, onGame
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[480px] bg-card text-card-foreground">
-        <DialogHeader>
-          <DialogTitle>Add New Game to Scrim</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[480px] bg-card text-card-foreground border border-border/50 shadow-lg">
+        <DialogHeader className="space-y-3 pb-6">
+          <DialogTitle className="text-xl font-semibold text-foreground">Add New Game to Scrim</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Fill in the details for the new game. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="game_number"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Game Number</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Game Number</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 1" {...field} className="bg-input text-foreground placeholder-muted-foreground" />
+                    <Input 
+                      type="number" 
+                      placeholder="e.g., 1" 
+                      {...field} 
+                      className="h-11 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors" 
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -181,23 +186,23 @@ const AddScrimGameDialog: React.FC<AddScrimGameDialogProps> = ({ scrimId, onGame
               control={form.control}
               name="result"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Result</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Result</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="bg-input text-foreground">
+                      <SelectTrigger className="h-11 bg-input border-border/50 text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
                         <SelectValue placeholder="Select game result" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="bg-popover border-border/50 text-popover-foreground">
                       {gameResultOptions.map((res) => (
-                        <SelectItem key={res} value={res}>
+                        <SelectItem key={res} value={res} className="hover:bg-muted/50">
                           {res}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -206,12 +211,17 @@ const AddScrimGameDialog: React.FC<AddScrimGameDialogProps> = ({ scrimId, onGame
               control={form.control}
               name="duration"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Duration (Optional)</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Duration (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 35:20" {...field} value={field.value || ''} className="bg-input text-foreground placeholder-muted-foreground"/>
+                    <Input 
+                      placeholder="e.g., 35:20" 
+                      {...field} 
+                      value={field.value || ''} 
+                      className="h-11 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -220,12 +230,17 @@ const AddScrimGameDialog: React.FC<AddScrimGameDialogProps> = ({ scrimId, onGame
               control={form.control}
               name="blue_side_pick"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Blue Side Pick (Example - Optional)</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Blue Side Pick (Example - Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Yasuo" {...field} value={field.value || ''} className="bg-input text-foreground placeholder-muted-foreground"/>
+                    <Input 
+                      placeholder="e.g., Yasuo" 
+                      {...field} 
+                      value={field.value || ''} 
+                      className="h-11 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -234,12 +249,17 @@ const AddScrimGameDialog: React.FC<AddScrimGameDialogProps> = ({ scrimId, onGame
               control={form.control}
               name="red_side_pick"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Red Side Pick (Example - Optional)</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Red Side Pick (Example - Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Yone" {...field} value={field.value || ''} className="bg-input text-foreground placeholder-muted-foreground"/>
+                    <Input 
+                      placeholder="e.g., Yone" 
+                      {...field} 
+                      value={field.value || ''} 
+                      className="h-11 bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -248,21 +268,26 @@ const AddScrimGameDialog: React.FC<AddScrimGameDialogProps> = ({ scrimId, onGame
               control={form.control}
               name="notes"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Game Notes (Optional)</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Game Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Any specific notes for this game..." {...field} value={field.value || ''} className="bg-input text-foreground placeholder-muted-foreground" />
+                    <Textarea 
+                      placeholder="Any specific notes for this game..." 
+                      {...field} 
+                      value={field.value || ''} 
+                      className="min-h-[80px] bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors" 
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
 
-            <DialogFooter>
+            <DialogFooter className="pt-6 gap-3">
               <DialogClose asChild>
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                <Button type="button" variant="outline" className="h-10 px-6" onClick={() => setIsOpen(false)}>Cancel</Button>
               </DialogClose>
-              <Button type="submit" disabled={addScrimGameMutation.isPending}>
+              <Button type="submit" disabled={addScrimGameMutation.isPending} className="h-10 px-6">
                 {addScrimGameMutation.isPending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving Game...</>
                 ) : (
@@ -278,4 +303,3 @@ const AddScrimGameDialog: React.FC<AddScrimGameDialogProps> = ({ scrimId, onGame
 };
 
 export default AddScrimGameDialog;
-

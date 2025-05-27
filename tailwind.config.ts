@@ -2,7 +2,7 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: "class", // Enable class-based dark mode
+  darkMode: "class",
   content: [
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -21,17 +21,18 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        gaming: ['Orbitron', 'Inter', 'sans-serif'],
       },
       fontSize: {
-        'xs': '0.75rem',    // 12px
-        'sm': '0.875rem',   // 14px
-        'base': '1rem',     // 16px (Specified)
-        'lg': '1.125rem',   // 18px (Specified)
-        'xl': '1.25rem',    // 20px (Specified)
-        '2xl': '1.5rem',    // 24px (Specified)
-        '3xl': '2rem',      // 32px (Specified as 2rem, Tailwind default is 1.875rem for 3xl, using 2rem)
-        '4xl': '2.25rem',   // 36px
-        '5xl': '3rem',      // 48px
+        'xs': '0.75rem',
+        'sm': '0.875rem',
+        'base': '1rem',
+        'lg': '1.125rem',
+        'xl': '1.25rem',
+        '2xl': '1.5rem',
+        '3xl': '2rem',
+        '4xl': '2.25rem',
+        '5xl': '3rem',
       },
       colors: {
         border: "hsl(var(--border))",
@@ -40,7 +41,7 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))", // Accent color
+          DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -67,9 +68,15 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Neutral colors from Tailwind's slate/stone
+        // Gaming-specific colors
+        'gaming-gold': "hsl(var(--gaming-gold))",
+        'gaming-green': "hsl(var(--gaming-green))",
+        'gaming-purple': "hsl(var(--gaming-purple))",
+        'gaming-orange': "hsl(var(--gaming-orange))",
+        'gaming-neon-blue': "hsl(var(--gaming-neon-blue))",
+        'gaming-neon-pink': "hsl(var(--gaming-neon-pink))",
         neutral: {
-          ...require('tailwindcss/colors').slate, // Using slate as a base neutral
+          ...require('tailwindcss/colors').slate,
         },
         stone: require('tailwindcss/colors').stone,
       },
@@ -77,11 +84,13 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-        '2xl': '1rem', // For rounded-2xl cards
+        '2xl': '1rem',
       },
       boxShadow: {
         soft: '0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04)',
         'soft-md': '0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.04)',
+        'gaming': '0 0 20px hsl(var(--primary) / 0.5)',
+        'gaming-lg': '0 0 40px hsl(var(--primary) / 0.3)',
       },
       keyframes: {
         "accordion-down": {
@@ -92,17 +101,37 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "pulse-glow": {
+          "0%, 100%": {
+            boxShadow: "0 0 5px hsl(var(--primary) / 0.5)",
+          },
+          "50%": {
+            boxShadow: "0 0 20px hsl(var(--primary) / 0.8)",
+          },
+        },
+        "slide-up": {
+          from: {
+            opacity: "0",
+            transform: "translateY(20px)",
+          },
+          to: {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "slide-up": "slide-up 0.4s ease-out",
       },
       gridTemplateColumns: {
-        'layout-desktop': '2fr 10fr', // Sidebar 2 cols, Content 10 cols
-        'layout-tablet': '1fr',      // Full width for content with top nav
+        'layout-desktop': '2fr 10fr',
+        'layout-tablet': '1fr',
       },
       gap: {
-        '4': '1rem', // Standard gap
+        '4': '1rem',
       }
     },
   },

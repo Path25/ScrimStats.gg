@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, PlusCircle, Copy, AlertCircle, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Copy, AlertCircle, Trash2, CheckCircle, XCircle, Target } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Accordion,
@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import EmptyState from '@/components/EmptyState';
 
 // Define types using Tables from supabase/types
 type Scrim = Tables<'scrims'>;
@@ -357,13 +358,17 @@ const ScrimDetailPage: React.FC = () => {
   if (anyError) {
     return (
       <Layout>
-        <div className="space-y-6 text-destructive-foreground bg-destructive p-4 rounded-md">
-          <h1 className="text-3xl font-bold">Error Loading Scrim Data</h1>
-          <p>There was an issue fetching data: {anyError?.message}</p>
-          <Button variant="outline" onClick={() => navigate('/scrims')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Scrims List
-          </Button>
-        </div>
+        <EmptyState
+          icon={AlertCircle}
+          title="Error Loading Scrim Data"
+          description={`There was an issue fetching data: ${anyError?.message}`}
+          action={{
+            label: "Back to Scrims List",
+            onClick: () => navigate('/scrims'),
+            variant: "outline"
+          }}
+          className="border-destructive bg-destructive/5"
+        />
       </Layout>
     );
   }
@@ -371,13 +376,16 @@ const ScrimDetailPage: React.FC = () => {
   if (!scrim) {
      return (
       <Layout>
-        <div className="space-y-6 text-center">
-          <h1 className="text-3xl font-bold">Scrim Not Found</h1>
-          <p>The scrim with ID {scrimId} could not be found or you do not have permission to view it.</p>
-          <Button variant="outline" onClick={() => navigate('/scrims')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Scrims List
-          </Button>
-        </div>
+        <EmptyState
+          icon={AlertCircle}
+          title="Scrim Not Found"
+          description={`The scrim with ID ${scrimId} could not be found or you do not have permission to view it.`}
+          action={{
+            label: "Back to Scrims List",
+            onClick: () => navigate('/scrims'),
+            variant: "outline"
+          }}
+        />
       </Layout>
     );
   }
@@ -552,11 +560,25 @@ const ScrimDetailPage: React.FC = () => {
               ))}
             </Accordion>
           ) : (
-            <Card className="scrim-card">
-              <CardContent className="text-muted-foreground pt-6">
-                No game data available for this scrim. {canManageThisScrim && isScrimActionable ? 'Click "Add Game" to get started.' : 'This scrim is not currently active for adding games.'}
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={Target}
+              title="No game data available"
+              description={
+                canManageThisScrim && isScrimActionable 
+                  ? "This scrim doesn't have any recorded games yet. Add your first game to start tracking match performance and statistics."
+                  : "This scrim doesn't have any recorded games. Games can only be added when the scrim is active."
+              }
+              action={
+                canManageThisScrim && isScrimActionable && scrimId ? {
+                  label: "Add First Game",
+                  onClick: () => {
+                    // This would trigger the AddScrimGameDialog - the actual implementation would depend on how the dialog is structured
+                    console.log("Add game clicked");
+                  },
+                  variant: "gaming" as const
+                } : undefined
+              }
+            />
           )}
           
           <Card className="scrim-card">

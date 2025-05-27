@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Settings, Calendar, Users, FileText, LogOut } from 'lucide-react';
@@ -37,7 +36,7 @@ const Sidebar: React.FC = () => {
     <aside className="bg-card text-card-foreground h-screen w-full p-4 flex flex-col shadow-soft">
       <div className="mb-8">
         <NavLink to="/dashboard">
-          <h1 className="text-2xl font-bold text-primary">ScrimStats Pro</h1>
+          <h1 className="text-2xl font-bold text-primary font-gaming tracking-wider">ScrimStats.gg</h1>
         </NavLink>
         {/* Show welcome message if user is authenticated and auth process is complete */}
         {/* Profile data might still be loading, handled by optional chaining on `profile` */}

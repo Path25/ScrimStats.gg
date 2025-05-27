@@ -4,6 +4,8 @@ import { LolGameSummaryData, TeamDetails, GamePlayer, PlayerGameStats, getKDA, g
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import GameBadgesSection from './GameBadgesSection';
+import { calculateGameBadges } from '@/types/gameBadges';
 
 interface DetailedGameSummaryViewProps {
   summaryData: LolGameSummaryData;
@@ -140,15 +142,30 @@ const DetailedGameSummaryView: React.FC<DetailedGameSummaryViewProps> = ({ summa
   const blueTeam = summaryData.teams.find(t => t.teamId === 100);
   const redTeam = summaryData.teams.find(t => t.teamId === 200);
 
+  // Calculate achievement badges for all players
+  const allPlayers = [
+    ...(blueTeam?.players || []),
+    ...(redTeam?.players || [])
+  ];
+  const achievementBadges = calculateGameBadges(allPlayers);
+
   return (
     <div className="space-y-4 my-4 p-4 border rounded-lg bg-card scrim-card">
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-xl font-semibold text-foreground">Game Summary</h3>
+        <h3 className="text-xl font-semibold text-foreground font-gaming">GAME SUMMARY</h3>
         <div className="text-sm text-muted-foreground">
           <span>Mode: {summaryData.gameMode || 'N/A'}</span> | <span>Length: {formatGameLength(summaryData.gameLength)}</span>
         </div>
       </div>
       <Separator />
+      
+      {/* Achievement Badges Section */}
+      {achievementBadges.length > 0 && (
+        <>
+          <GameBadgesSection badges={achievementBadges} />
+          <Separator />
+        </>
+      )}
       
       {blueTeam && <TeamSummary team={blueTeam} />}
       {redTeam && <TeamSummary team={redTeam} />}

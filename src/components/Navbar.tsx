@@ -19,7 +19,7 @@ const Navbar: React.FC = () => {
     <header className="bg-card text-card-foreground shadow-soft p-4 sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
         <NavLink to="/dashboard">
-         <h1 className="text-xl font-bold text-primary">ScrimStats Pro</h1>
+         <h1 className="text-xl font-bold text-primary font-gaming tracking-wider">ScrimStats.gg</h1>
         </NavLink>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -33,7 +33,7 @@ const Navbar: React.FC = () => {
             <SheetContent side="right" className="w-[250px] sm:w-[300px] bg-card p-6">
               <div className="flex flex-col h-full">
                 <div className="mb-6 flex justify-between items-center">
-                   <h2 className="text-lg font-semibold text-primary">Menu</h2>
+                   <h2 className="text-lg font-semibold text-primary font-gaming tracking-wide">MENU</h2>
                    <SheetClose asChild>
                       <Button variant="ghost" size="icon"><X className="h-5 w-5"/></Button>
                    </SheetClose>

@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Users, Shield, Sword, Award } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AddPlayerDialog, { PlayerFormData as AddPlayerFormData } from '@/components/AddPlayerDialog';
 import EditPlayerDialog, { PlayerFormData as EditPlayerFormData } from '@/components/EditPlayerDialog';
@@ -10,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 import type { Tables } from '@/integrations/supabase/types';
 
 // Use the Player type from Supabase generated types
@@ -231,41 +233,51 @@ const PlayersPage: React.FC = () => {
   };
 
   if (authLoading) {
-    console.log("PlayersPage RENDER: Auth is loading, showing loader.");
     return (
       <Layout>
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-muted-foreground">Loading authentication...</p>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center pulse-glow">
+              <Loader2 className="h-6 w-6 animate-spin text-primary-foreground" />
+            </div>
+            <p className="text-muted-foreground">Loading authentication...</p>
+          </div>
         </div>
       </Layout>
     );
   }
 
   if (!user) {
-    console.log("PlayersPage RENDER: No user, prompting login (or redirecting).");
     return (
       <Layout>
         <div className="flex flex-col justify-center items-center h-64 text-center">
+          <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mb-4">
+            <Shield className="w-8 h-8 text-destructive" />
+          </div>
           <p className="text-xl font-semibold text-destructive mb-4">Access Denied</p>
           <p className="text-muted-foreground">You must be logged in to manage players.</p>
-          <Button onClick={() => window.location.href = '/login'} className="mt-4">Go to Login</Button>
+          <Button onClick={() => window.location.href = '/login'} className="mt-4 shadow-sm">Go to Login</Button>
         </div>
       </Layout>
     );
   }
-  
-  console.log("PlayersPage RENDER: Rendering main content.");
 
   return (
     <Layout>
       <div className="space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Players Management</h1>
-          {/* canManagePlayers now correctly uses isAdmin/isCoach from AuthContext */}
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gaming-purple to-gaming-neon-pink flex items-center justify-center shadow-gaming">
+              <Users className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground neon-text">Team Roster</h1>
+              <p className="text-muted-foreground">Manage your team's player roster</p>
+            </div>
+          </div>
           {canManagePlayers && (
             <AddPlayerDialog onPlayerAdd={handleAddPlayer}>
-              <Button disabled={addPlayerMutation.isPending}>
+              <Button disabled={addPlayerMutation.isPending} className="shadow-gaming">
                 {addPlayerMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -277,12 +289,15 @@ const PlayersPage: React.FC = () => {
           )}
         </div>
         
-        <Card className="scrim-card">
+        <Card className="gaming-table">
           <CardHeader>
-            <CardTitle>Team Roster</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-gaming-gold" />
+              Team Roster
+            </CardTitle>
             <CardDescription>View your team's players. Admins/Coaches can manage them.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {playersLoading && (
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -297,30 +312,54 @@ const PlayersPage: React.FC = () => {
             {!playersLoading && !playersError && players && (
               <>
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="gaming-table-header">
                     <TableRow>
-                      <TableHead>Summoner Name</TableHead>
+                      <TableHead className="w-[200px]">Summoner Name</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Team Tag</TableHead>
-                      <TableHead>Linked User ID</TableHead>
-                      {/* canManagePlayers now correctly uses isAdmin/isCoach from AuthContext */}
+                      <TableHead>Account Status</TableHead>
                       {canManagePlayers && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {players.map((player) => (
-                      <TableRow key={player.id}>
-                        <TableCell className="font-medium">{player.summoner_name}</TableCell>
-                        <TableCell>{player.role}</TableCell>
-                        <TableCell>{player.team_tag || '-'}</TableCell>
-                        <TableCell>
-                          {player.linked_profile_id ? 
-                            <span title={player.linked_profile_id} className="truncate text-xs text-muted-foreground">
-                              {player.linked_profile_id.substring(0,8)}...
-                            </span> 
-                            : '-'}
+                    {players.length > 0 ? players.map((player, index) => (
+                      <TableRow 
+                        key={player.id} 
+                        className="gaming-table-row table-row-animate-in"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Sword className="h-4 w-4 text-primary" />
+                            {player.summoner_name}
+                          </div>
                         </TableCell>
-                        {/* canManagePlayers, isAdmin, isCoach now correctly reflect context values */}
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize text-muted-foreground">
+                            {player.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {player.team_tag ? (
+                            <span className="font-mono text-xs bg-muted/20 px-2 py-1 rounded">
+                              {player.team_tag}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {player.linked_profile_id ? (
+                            <Badge variant="success" className="flex items-center gap-1">
+                              <span className="h-2 w-2 bg-gaming-green rounded-full animate-pulse"></span>
+                              Linked
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              No Account
+                            </Badge>
+                          )}
+                        </TableCell>
                         {canManagePlayers && (
                           <TableCell className="text-right space-x-2">
                             {(isAdmin || (isCoach && player.user_id === user?.id)) && (
@@ -331,6 +370,7 @@ const PlayersPage: React.FC = () => {
                                   aria-label="Edit player" 
                                   onClick={() => handleOpenEditDialog(player)}
                                   disabled={updatePlayerMutation.isPending && updatePlayerMutation.variables?.playerId === player.id}
+                                  className="hover:bg-primary/10 hover:text-primary transition-all"
                                 >
                                   {updatePlayerMutation.isPending && updatePlayerMutation.variables?.playerId === player.id ? (
                                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -342,7 +382,7 @@ const PlayersPage: React.FC = () => {
                                   variant="ghost" 
                                   size="icon" 
                                   aria-label="Delete player" 
-                                  className="text-destructive hover:text-destructive/80" 
+                                  className="text-destructive hover:text-destructive/80 hover:bg-destructive/10" 
                                   onClick={() => handleDeletePlayer(player)}
                                   disabled={deletePlayerMutation.isPending && deletePlayerMutation.variables === player.id}
                                 >
@@ -357,18 +397,32 @@ const PlayersPage: React.FC = () => {
                           </TableCell>
                         )}
                       </TableRow>
-                    ))}
+                    )) : (
+                      <TableRow>
+                        <TableCell colSpan={canManagePlayers ? 5 : 4} className="h-24 text-center">
+                          <div className="flex flex-col items-center justify-center space-y-3 py-4">
+                            <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
+                              <Users className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                            <div className="text-muted-foreground">No players added yet</div>
+                            {canManagePlayers && (
+                              <AddPlayerDialog onPlayerAdd={handleAddPlayer}>
+                                <Button size="sm" variant="outline" className="mt-2">
+                                  <PlusCircle className="mr-2 h-4 w-4" /> Add your first player
+                                </Button>
+                              </AddPlayerDialog>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
-                {players.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">No players added yet. Click "Add Player" to get started.</p>
-                )}
               </>
             )}
           </CardContent>
         </Card>
       </div>
-      {/* editingPlayer and permission checks (isAdmin, isCoach) now correctly reflect context values */}
       {editingPlayer && canManagePlayers && (isAdmin || (isCoach && editingPlayer.user_id === user?.id)) && (
         <EditPlayerDialog
           player={editingPlayer}

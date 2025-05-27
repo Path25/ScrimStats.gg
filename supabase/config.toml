@@ -1,5 +1,8 @@
 
-project_id = "nsryemtjsudzbhoufcbl"
+# Template configuration for ScrimStats.gg
+# Replace 'your-project-id' with your actual Supabase project ID
+
+project_id = "your-project-id"
 
 [functions.test-riot-api]
   verify_jwt = true

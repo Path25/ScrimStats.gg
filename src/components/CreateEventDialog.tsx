@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -136,16 +137,16 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
   if (!selectedDate && isOpen) {
       return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-          <DialogContent className="sm:max-w-[425px] bg-card">
-            <DialogHeader>
-              <DialogTitle>Create New Event</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="sm:max-w-[480px] bg-card border border-border/50 shadow-lg">
+            <DialogHeader className="space-y-3 pb-6">
+              <DialogTitle className="text-xl font-semibold text-foreground">Create New Event</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
                 Please select a date on the calendar first to create an event.
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
+            <DialogFooter className="pt-6">
               <DialogClose asChild>
-                <Button variant="outline" onClick={onClose}>Close</Button>
+                <Button variant="outline" onClick={onClose} className="h-10 px-6">Close</Button>
               </DialogClose>
             </DialogFooter>
           </DialogContent>
@@ -157,25 +158,28 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-card overflow-y-auto max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Create New Event</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[480px] bg-card border border-border/50 shadow-lg overflow-y-auto max-h-[90vh]">
+        <DialogHeader className="space-y-3 pb-6">
+          <DialogTitle className="text-xl font-semibold text-foreground">Create New Event</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Add details for your event on {selectedDate.toLocaleDateString()}.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right text-foreground">Title</FormLabel>
-                  <FormControl className="col-span-3">
-                    <Input {...field} className="bg-input text-foreground" />
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Title</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      className="h-11 bg-input border-border/50 text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors" 
+                    />
                   </FormControl>
-                  <FormMessage className="col-span-4 text-right" />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -183,28 +187,28 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
               control={form.control}
               name="type"
               render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right text-foreground">Type</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Type</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value} 
                     defaultValue={field.value}
                     disabled={displayableEventTypes.length === 1 && !!initialEventType}
                   >
-                    <FormControl className="col-span-3">
-                      <SelectTrigger className="bg-input text-foreground">
+                    <FormControl>
+                      <SelectTrigger className="h-11 bg-input border-border/50 text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
                         <SelectValue placeholder="Select event type" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="bg-popover border-border/50 text-popover-foreground">
                       {displayableEventTypes.map((eventType) => (
-                        <SelectItem key={eventType} value={eventType} className="capitalize">
+                        <SelectItem key={eventType} value={eventType} className="capitalize hover:bg-muted/50">
                           {eventType.charAt(0).toUpperCase() + eventType.slice(1)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage className="col-span-4 text-right" />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -212,12 +216,17 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
               control={form.control}
               name="startTime"
               render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right text-foreground">Start Time</FormLabel>
-                  <FormControl className="col-span-3">
-                    <Input type="time" {...field} value={field.value || ''} className="bg-input text-foreground" />
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Start Time</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="time" 
+                      {...field} 
+                      value={field.value || ''} 
+                      className="h-11 bg-input border-border/50 text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors" 
+                    />
                   </FormControl>
-                  <FormMessage className="col-span-4 text-right" />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -225,12 +234,17 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
               control={form.control}
               name="endTime"
               render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right text-foreground">End Time</FormLabel>
-                  <FormControl className="col-span-3">
-                    <Input type="time" {...field} value={field.value || ''} className="bg-input text-foreground" />
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">End Time</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="time" 
+                      {...field} 
+                      value={field.value || ''} 
+                      className="h-11 bg-input border-border/50 text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors" 
+                    />
                   </FormControl>
-                  <FormMessage className="col-span-4 text-right" />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -238,17 +252,17 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
               control={form.control}
               name="description"
               render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right text-foreground">Description</FormLabel>
-                  <FormControl className="col-span-3">
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-sm font-medium text-foreground">Description</FormLabel>
+                  <FormControl>
                     <Textarea
                       {...field}
                       value={field.value || ''}
-                      className="bg-input text-foreground"
+                      className="min-h-[80px] bg-input border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                       placeholder="Optional event details..."
                     />
                   </FormControl>
-                  <FormMessage className="col-span-4 text-right" />
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -258,21 +272,23 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
               control={form.control}
               name="is_recurring"
               render={({ field }) => (
-                <FormItem className="grid grid-cols-4 items-center gap-4">
-                  <FormLabel className="text-right text-foreground">Recurring</FormLabel>
-                  <FormControl className="col-span-3">
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        field.onChange(checked);
-                        if (!checked) {
-                          form.setValue('recurrence_days', []);
-                          form.setValue('series_end_date', undefined);
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 text-right" />
+                <FormItem className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (!checked) {
+                            form.setValue('recurrence_days', []);
+                            form.setValue('series_end_date', undefined);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormLabel className="text-sm font-medium text-foreground cursor-pointer">Recurring Event</FormLabel>
+                  </div>
+                  <FormMessage className="text-xs text-destructive" />
                 </FormItem>
               )}
             />
@@ -283,31 +299,29 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   control={form.control}
                   name="recurrence_days"
                   render={({ field }) => (
-                    <FormItem className="grid grid-cols-4 items-center gap-4">
-                      <FormLabel className="text-right text-foreground">Repeat on</FormLabel>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {(Object.keys(DayOfWeekMap) as DayOfWeek[]).map((day) => (
-                            <Button
-                              type="button"
-                              key={day}
-                              variant={field.value?.includes(day) ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => {
-                                const currentDays = field.value || [];
-                                const newDays = currentDays.includes(day)
-                                  ? currentDays.filter(d => d !== day)
-                                  : [...currentDays, day];
-                                field.onChange(newDays);
-                              }}
-                              className="px-3 py-1 h-auto"
-                            >
-                              {DayOfWeekMap[day]}
-                            </Button>
-                          ))}
-                        </div>
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-sm font-medium text-foreground">Repeat on</FormLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {(Object.keys(DayOfWeekMap) as DayOfWeek[]).map((day) => (
+                          <Button
+                            type="button"
+                            key={day}
+                            variant={field.value?.includes(day) ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                              const currentDays = field.value || [];
+                              const newDays = currentDays.includes(day)
+                                ? currentDays.filter(d => d !== day)
+                                : [...currentDays, day];
+                              field.onChange(newDays);
+                            }}
+                            className="px-3 py-1 h-auto"
+                          >
+                            {DayOfWeekMap[day]}
+                          </Button>
+                        ))}
                       </div>
-                       <FormMessage className="col-span-4 text-right" />
+                      <FormMessage className="text-xs text-destructive" />
                     </FormItem>
                   )}
                 />
@@ -315,15 +329,15 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                   control={form.control}
                   name="series_end_date"
                   render={({ field }) => (
-                    <FormItem className="grid grid-cols-4 items-center gap-4">
-                      <FormLabel className="text-right text-foreground">Ends on</FormLabel>
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-sm font-medium text-foreground">Ends on</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <FormControl className="col-span-3">
+                          <FormControl>
                             <Button
                               variant={"outline"}
                               className={cn(
-                                "w-full justify-start text-left font-normal bg-input text-foreground",
+                                "w-full justify-start text-left font-normal h-11 bg-input border-border/50 text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors",
                                 !field.value && "text-muted-foreground"
                               )}
                             >
@@ -332,7 +346,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0 bg-popover border-border/50" align="start">
                           <ShadCalendar
                             mode="single"
                             selected={field.value ? parseISO(field.value) : undefined}
@@ -342,18 +356,18 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({
                           />
                         </PopoverContent>
                       </Popover>
-                      <FormMessage className="col-span-4 text-right" />
+                      <FormMessage className="text-xs text-destructive" />
                     </FormItem>
                   )}
                 />
               </>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="pt-6 gap-3">
               <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
+                <Button type="button" variant="outline" className="h-10 px-6">Cancel</Button>
               </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>Save Event</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="h-10 px-6">Save Event</Button>
             </DialogFooter>
           </form>
         </Form>

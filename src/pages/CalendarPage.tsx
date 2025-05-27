@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import AddScrimDialog from '@/components/AddScrimDialog';
 import CreateEventDialog from '@/components/CreateEventDialog';
+import MonthlyCalendar from '@/components/MonthlyCalendar';
 import { CalendarEvent, EventType } from '@/types/event';
 import { PlusCircle, CalendarPlus, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +14,8 @@ import { fetchScrimsAsCalendarEvents, fetchGeneralCalendarEvents, addCalendarEve
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { format, parseISO } from 'date-fns';
-// Import RRule components, ensure Options is aliased and constants are accessed via RRule
 import { RRule, RRuleSet, rrulestr, Weekday, Options as RRuleOptions } from 'rrule'; 
-import { EventFormData, DayOfWeek as FormDayOfWeek } from '@/components/schemas/eventFormSchema'; // Import EventFormData
+import { EventFormData, DayOfWeek as FormDayOfWeek } from '@/components/schemas/eventFormSchema';
 
 // Mapping from form DayOfWeek (MO, TU, etc.) to RRule.Weekday using RRule properties
 const rruleWeekdaysMap: Record<FormDayOfWeek, Weekday> = {
@@ -63,6 +62,7 @@ const OFFICIAL_EVENT_TYPE: EventType[] = ['official'];
 
 const CalendarPage: React.FC = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [isAddScrimDialogOpen, setIsAddScrimDialogOpen] = useState(false);
   const [isCreateGeneralEventDialogOpen, setIsCreateGeneralEventDialogOpen] = useState(false);
   const [isAddOfficialDialogOpen, setIsAddOfficialDialogOpen] = useState(false);
@@ -97,10 +97,6 @@ const CalendarPage: React.FC = () => {
       return a.title.localeCompare(b.title);
     });
   }, [scrimEvents, generalEvents]);
-
-  const eventDays = useMemo(() => allEvents.map(e => e.date), [allEvents]);
-  const modifiers = { hasEvent: eventDays };
-  const modifiersClassNames = { hasEvent: 'day-has-event' };
 
   const selectedDayEvents = useMemo(() => {
     if (!date) return [];
@@ -198,95 +194,95 @@ const CalendarPage: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-8">
-        <h1 className="text-3xl font-bold text-foreground">Calendar</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-foreground">Schedule</h1>
+          <div className="flex items-center gap-2">
+            {date && (
+              <>
+                <Button 
+                  onClick={() => setIsAddScrimDialogOpen(true)} 
+                  variant="outline"
+                  size="sm"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Scrim
+                </Button>
+                <Button 
+                  onClick={() => setIsAddOfficialDialogOpen(true)} 
+                  variant="outline"
+                  size="sm"
+                  className="border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                >
+                  <ShieldCheck className="mr-2 h-4 w-4" /> 
+                  Official Event
+                </Button>
+                <Button 
+                  onClick={() => setIsCreateGeneralEventDialogOpen(true)} 
+                  variant="outline"
+                  size="sm"
+                >
+                  <CalendarPlus className="mr-2 h-4 w-4" />
+                  General Event
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="scrim-card md:col-span-2 min-h-[500px]">
-            <CardHeader>
-              <CardTitle>Event Calendar</CardTitle>
-              <CardDescription>Select a day to view or add events.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-start pt-6">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md border bg-popover text-popover-foreground"
-                modifiers={modifiers}
-                modifiersClassNames={modifiersClassNames}
-              />
-              <div className="mt-4 w-full max-w-md text-center space-y-2">
-                {date && (
-                  <>
-                    <Button 
-                      onClick={() => setIsAddScrimDialogOpen(true)} 
-                      className="w-full"
-                      variant="outline"
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Scrim for {date.toLocaleDateString()}
-                    </Button>
-                    <Button 
-                      onClick={() => setIsAddOfficialDialogOpen(true)} 
-                      className="w-full font-semibold border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
-                      variant="outline"
-                    >
-                      <ShieldCheck className="mr-2 h-4 w-4" /> 
-                      Add Official Event for {date.toLocaleDateString()}
-                    </Button>
-                    <Button 
-                      onClick={() => setIsCreateGeneralEventDialogOpen(true)} 
-                      className="w-full"
-                      variant="outline"
-                    >
-                      <CalendarPlus className="mr-2 h-4 w-4" />
-                      Add General Event for {date.toLocaleDateString()}
-                    </Button>
-                  </>
-                )}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            {isLoading ? (
+              <div className="gaming-card p-6">
+                <Skeleton className="h-96 w-full" />
               </div>
-            </CardContent>
-          </Card>
+            ) : queryError ? (
+              <div className="gaming-card p-6">
+                <p className="text-destructive">Error loading events: {queryError.message}. Please try again.</p>
+              </div>
+            ) : (
+              <MonthlyCalendar
+                events={allEvents}
+                selectedDate={date}
+                onDateSelect={setDate}
+                currentMonth={currentMonth}
+                onMonthChange={setCurrentMonth}
+              />
+            )}
+          </div>
 
-          <Card className="scrim-card md:col-span-1 min-h-[500px]">
+          <Card className="gaming-card lg:col-span-1">
             <CardHeader>
               <CardTitle>
-                Events for {date ? date.toLocaleDateString() : 'Selected Date'}
+                {date ? format(date, 'MMM d, yyyy') : 'Select a Date'}
               </CardTitle>
-              {!date && <CardDescription>Select a date to see events.</CardDescription>}
+              <CardDescription>
+                {date ? 'Events for this day' : 'Click a date to view events'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading && (
-                <div className="space-y-4">
-                  <Skeleton className="h-20 w-full" />
-                  <Skeleton className="h-20 w-full" />
-                  <Skeleton className="h-20 w-full" />
-                </div>
-              )}
-              {queryError && <p className="text-destructive">Error loading events: {queryError.message}. Please try again.</p>}
-              {!isLoading && !queryError && date && selectedDayEvents.length > 0 ? (
-                <ul className="space-y-4">
+              {date && selectedDayEvents.length > 0 ? (
+                <div className="space-y-3">
                   {selectedDayEvents.map((event) => {
                     const visuals = eventTypeVisualsMap[event.type];
                     const EventIcon = visuals?.icon;
                     const isOfficial = event.type === 'official';
 
                     return (
-                      <li 
+                      <div 
                         key={event.id} 
                         className={cn(
-                          "p-4 rounded-md border shadow-sm bg-card",
+                          "p-3 rounded-md border shadow-sm bg-card/50",
                           visuals?.borderColorClass,
-                          isOfficial ? 'border-l-[6px]' : 'border-l-4',
-                          isOfficial && 'bg-amber-50/50 dark:bg-amber-900/20'
+                          isOfficial ? 'border-l-[3px]' : 'border-l-2',
+                          isOfficial && 'bg-amber-50/30 dark:bg-amber-900/10'
                         )}
                       >
                         <div className="flex justify-between items-start mb-1">
                           <div className="flex items-center gap-2">
-                            {EventIcon && <EventIcon className={cn("h-5 w-5", isOfficial ? "text-amber-600" : "text-muted-foreground")} />}
+                            {EventIcon && <EventIcon className={cn("h-4 w-4", isOfficial ? "text-amber-600" : "text-muted-foreground")} />}
                             <h4 className={cn(
-                              "text-foreground text-base",
-                              isOfficial ? "font-bold text-amber-700 dark:text-amber-400" : "font-semibold"
+                              "text-sm font-medium",
+                              isOfficial ? "text-amber-700 dark:text-amber-400" : "text-foreground"
                             )}>{event.title}</h4>
                           </div>
                           {visuals && (
@@ -294,7 +290,7 @@ const CalendarPage: React.FC = () => {
                               className={cn(
                                 visuals.badgeBgClass,
                                 visuals.badgeTextColorClass,
-                                "capitalize text-xs font-medium"
+                                "text-xs"
                               )}
                             >
                               {event.type}
@@ -302,24 +298,24 @@ const CalendarPage: React.FC = () => {
                           )}
                         </div>
                         
-                        {(event.startTime) && (
-                          <p className="text-sm text-muted-foreground mb-1">
-                            Time: {event.startTime}
+                        {event.startTime && (
+                          <p className="text-xs text-muted-foreground mb-1">
+                            {event.startTime}
                             {event.endTime && ` - ${event.endTime}`}
                           </p>
                         )}
                         {event.description && (
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.description}</p>
+                          <p className="text-xs text-muted-foreground">{event.description}</p>
                         )}
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
-              ) : !isLoading && !queryError && date ? (
-                <p className="text-muted-foreground">No events scheduled for this date.</p>
-              ) : !isLoading && !queryError && !date ? (
-                <p className="text-muted-foreground">Select a date on the calendar to view and add events.</p>
-              ) : null}
+                </div>
+              ) : date ? (
+                <p className="text-sm text-muted-foreground">No events scheduled for this date.</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Select a date to view events.</p>
+              )}
             </CardContent>
           </Card>
         </div>

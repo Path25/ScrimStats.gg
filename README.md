@@ -2,25 +2,26 @@
 
 This project provides a platform for managing League of Legends team activities, including scrims, player stats, and scheduling.
 
-ScrimStats.GG: League of Legends Team Assistant
-ScrimStats.GG is a comprehensive team management platform specifically designed for League of Legends esports teams. It provides coaches and players with tools to organize scrimmages (practice games), track player performance, and manage team activities.
+ScrimStats.GG: League of Legends Team Assistant.
 
-# Core Features
-Scrim Management
-Player Roster Management
-Calendar and Scheduling
-Game Statistics Integration
-User Role-Based Access
-Dashboard Analytics
+ScrimStats.GG is a comprehensive team management platform specifically designed for League of Legends esports teams. It provides coaches and players with tools to organize scrims (and other events), track player performance, and manage team activities.
 
-# Upcoming Features
-Enhanced Performance Analytics
-Team Communication Integration
-Advanced Scheduling Features
-Mobile Companion App
-VOD Review Integration
-Link recorded gameplay for analysis
-Timestamped notes and feedback
+## Core Features
+*   Scrim Management
+*   Player Roster Management
+*   Calendar and Scheduling
+*   Game Statistics Integration
+*   User Role-Based Access
+*   Dashboard Analytics
+
+## Upcoming Features
+*   Enhanced Performance Analytics
+*   Team Communication Integration
+*   Advanced Scheduling Features
+*   Mobile Companion App
+*   VOD Review Integration
+*   Link recorded gameplay for analysis
+*   Timestamped notes and feedback
 
 ## How to Work with This Code
 
@@ -69,8 +70,7 @@ Once your Supabase project is ready:
 2.  Go to the **API** section.
 3.  Note down:
     *   **Project URL**: (e.g., `https://<your-project-ref>.supabase.co`). This is `VITE_SUPABASE_URL`.
-    *   **Project API Key (anon public)**: This is `VITE_SUPABASE_ANON_KEY`.
-    *   **Service Role Key (secret)**: Found under "Project API keys", labeled `service_role`. **Keep this secret secure.** This is `SUPABASE_SERVICE_ROLE_KEY`.
+    *   **Project API Key (anon public)**: This is `VITE_SUPABASE_ANON_KEY`. (If this is not visible please click the API button underneath the Project URL)
 
 **Step 1.3: Set Up the Database Schema**
 1.  In your Supabase project dashboard, go to the **SQL Editor**.
@@ -90,9 +90,9 @@ Supabase Edge Functions handle backend logic like API interactions and data proc
     *   For each function (`get-api-configuration`, `receive-game-stats`, `set-api-configuration`, `test-riot-api`):
         *   Click "**Deploy a new function**" then "**Via Editor**".
         *   Enter the **Function name** exactly as its directory name (e.g., `get-api-configuration`).
-        *   After the function is created in the Supabase UI, you'll be in an online editor for that function.
+        *   After the function is created in the Supabase UI, you'll be in an online editor for that function. (If not click "Code" from the top menu)
         *   **Copy `index.ts` content:** Open the `index.ts` file from the corresponding function directory in your *local or GitHub repository view* (e.g., `supabase/functions/get-api-configuration/index.ts`). Copy its entire content. Paste this into the `index.ts` tab in the Supabase Edge Function editor.
-        *   **Create and copy `cors.ts` content:** In the Supabase Edge Function editor, click the "Add file" button to create a new file. Name this file `cors.ts`. Open the `cors.ts` file from the same function directory in your *local or GitHub repository view* (e.g., `supabase/functions/get-api-configuration/cors.ts`). Copy its entire content. Paste this into the newly created `cors.ts` tab in the Supabase Edge Function editor.
+        *   **Create and copy `cors.ts` content:** In the Supabase Edge Function editor, click the "Add file" obutton to create a new file. Rename this file `cors.ts`. Open the `cors.ts` file from the same function directory in your *local or GitHub repository view* (e.g., `supabase/functions/get-api-configuration/cors.ts`). Copy its entire content. Paste this into the newly created `cors.ts` tab in the Supabase Edge Function editor.
         *   Click "**Save and Deploy**" (or similar) for the function. Repeat for all Edge Functions.
 
 **Step 1.5: Configure Edge Function Secrets in Supabase**
@@ -137,9 +137,9 @@ Save the variables.
 
 **Step 3.2: (Optional) Adjust Supabase Authentication Settings**
 1.  In your Supabase Dashboard, go to **Authentication** > **Providers**.
-2.  Under **Email**, toggle off "**Confirm email**" for easier initial testing. Re-enable for production.
+2.  Under **Email**, toggle off "**Confirm email**" for easier sign up. (If enabled the confirm email link will lead to a page it cannot load but it still accepts the confirmation)
 
-**Step 3.3: Configure Riot API Key in the Application**
+**Step 3.3: Configure Riot API Key in the Application** (Optional, feature usage coming very soon)
 1.  Log in to your deployed application with the admin account.
 2.  Navigate to the **Settings** page.
 3.  Under **API Configuration** or **Riot API Settings**, enter your **Riot API Key** (from the [Riot Developer Portal](https://developer.riotgames.com/)) and region.
