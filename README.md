@@ -178,22 +178,6 @@ DO $$ BEGIN CREATE TYPE public.calendar_event_type AS ENUM ('scrim', 'tournament
 DO $$ BEGIN CREATE TYPE public.game_result_enum AS ENUM ('Win', 'Loss', 'N/A'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.scrim_status_enum AS ENUM ('Scheduled', 'Completed', 'Cancelled'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
--- PART 0.5: Core Helper Functions (Define before RLS policies that use them)
--- Function to check user roles (used in RLS policies to prevent recursion)
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role public.app_role)
- RETURNS boolean
- LANGUAGE sql
- STABLE
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
-  );
-$function$;
-
 -- PART 1: Table Structures
 -- Define all table structures first.
 
@@ -319,8 +303,23 @@ CREATE TABLE IF NOT EXISTS public.calendar_events (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- PART 2: Row Level Security (RLS) Policies and Table Alterations
+-- PART 1.5: Core Helper Functions (Define after tables, before RLS policies that use them)
+-- Function to check user roles (used in RLS policies to prevent recursion)
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role public.app_role)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id AND role = _role
+  );
+$function$;
 
+-- PART 2: Row Level Security (RLS) Policies and Table Alterations
 -- RLS for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Profiles are viewable by users who created them." ON public.profiles;
@@ -509,7 +508,73 @@ END;
 $$ language 'plpgsql';
 
 -- Apply trigger to tables that need updated_at automatically handled
--- ... keep existing code (all CREATE TRIGGER statements for updated_at)
+-- For profiles table
+DROP TRIGGER IF EXISTS set_timestamp_profiles ON public.profiles;
+CREATE TRIGGER set_timestamp_profiles
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- For user_roles table
+DROP TRIGGER IF EXISTS set_timestamp_user_roles ON public.user_roles;
+-- CREATE TRIGGER set_timestamp_user_roles -- No updated_at column in user_roles by default, add if needed
+
+-- For api_configurations table
+DROP TRIGGER IF EXISTS set_timestamp_api_configurations ON public.api_configurations;
+CREATE TRIGGER set_timestamp_api_configurations
+BEFORE UPDATE ON public.api_configurations
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- For player_api_tokens table
+DROP TRIGGER IF EXISTS set_timestamp_player_api_tokens ON public.player_api_tokens;
+CREATE TRIGGER set_timestamp_player_api_tokens
+BEFORE UPDATE ON public.player_api_tokens
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- For players table
+DROP TRIGGER IF EXISTS set_timestamp_players ON public.players;
+CREATE TRIGGER set_timestamp_players
+BEFORE UPDATE ON public.players
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- For scrim_recurrence_rules table
+DROP TRIGGER IF EXISTS set_timestamp_scrim_recurrence_rules ON public.scrim_recurrence_rules;
+CREATE TRIGGER set_timestamp_scrim_recurrence_rules
+BEFORE UPDATE ON public.scrim_recurrence_rules
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- For scrims table
+DROP TRIGGER IF EXISTS set_timestamp_scrims ON public.scrims;
+CREATE TRIGGER set_timestamp_scrims
+BEFORE UPDATE ON public.scrims
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- For scrim_games table
+DROP TRIGGER IF EXISTS set_timestamp_scrim_games ON public.scrim_games;
+CREATE TRIGGER set_timestamp_scrim_games
+BEFORE UPDATE ON public.scrim_games
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- For game_stats table
+DROP TRIGGER IF EXISTS set_timestamp_game_stats ON public.game_stats;
+CREATE TRIGGER set_timestamp_game_stats
+BEFORE UPDATE ON public.game_stats
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
+-- For calendar_events table
+DROP TRIGGER IF EXISTS set_timestamp_calendar_events ON public.calendar_events;
+CREATE TRIGGER set_timestamp_calendar_events
+BEFORE UPDATE ON public.calendar_events
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_updated_at_column();
+
 
 -- Handle New User Trigger Function (Creates profile and assigns roles)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
