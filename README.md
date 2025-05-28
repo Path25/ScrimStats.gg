@@ -177,7 +177,7 @@ If using the desktop application to send game stats:
 -- PART 0: Enum Types (Run these first if they don't exist)
 DO $$ BEGIN CREATE TYPE public.app_role AS ENUM ('admin', 'coach', 'player'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.api_config_type AS ENUM ('RIOT', 'GRID'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-DO $$ BEGIN CREATE TYPE public.calendar_event_type AS ENUM ('scrim', 'tournament', 'vod_review', 'team_meeting', 'other'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.calendar_event_type_enum AS ENUM ('scrim','official', 'meeting', 'theory', 'other'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.game_result_enum AS ENUM ('Win', 'Loss', 'N/A'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.scrim_status_enum AS ENUM ('Scheduled', 'Completed', 'Cancelled'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
@@ -301,7 +301,7 @@ CREATE TABLE IF NOT EXISTS public.calendar_events (
   event_date DATE NOT NULL,
   start_time TIME WITHOUT TIME ZONE,
   end_time TIME WITHOUT TIME ZONE,
-  type calendar_event_type NOT NULL,
+  type public.calendar_event_type_enum NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
