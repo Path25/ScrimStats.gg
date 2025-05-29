@@ -1,4 +1,3 @@
-
 # League of Legends Team Assistant (SCRIMSTATS.GG)
 
 This project provides a platform for managing League of Legends team activities, including scrims, player stats, and scheduling.
@@ -6,6 +5,8 @@ This project provides a platform for managing League of Legends team activities,
 ScrimStats.GG: League of Legends Team Assistant.
 
 ScrimStats.GG is a comprehensive team management platform specifically designed for League of Legends esports teams. It provides coaches and players with tools to organize scrims (and other events), track player performance, and manage team activities.
+
+(To be used with https://github.com/Path25/ScrimStatsDesktopApp )
 
 ## Core Features
 *   Scrim Management
@@ -147,6 +148,7 @@ Save the variables.
 4.  Save. This stores the key in the `api_configurations` table in Supabase and updates the `RIOT_API_KEY` Edge Function secret.
 
 ### **Part 4: (Optional) Desktop Application Integration for Game Stats**
+(To be used with https://github.com/Path25/ScrimStatsDesktopApp )
 
 If using the desktop application to send game stats:
 *   **Server URL**: This is the API Server URL (in web app Settings > API Token Manager).
