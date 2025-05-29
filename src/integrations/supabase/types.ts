@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_log_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_audit_log_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_configurations: {
         Row: {
           api_type: Database["public"]["Enums"]["api_config_type_enum"]
@@ -29,6 +71,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      applied_migrations: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          id: string
+          migration_version: string
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          id?: string
+          migration_version: string
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          id?: string
+          migration_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applied_migrations_migration_version_fkey"
+            columns: ["migration_version"]
+            isOneToOne: false
+            referencedRelation: "schema_migrations"
+            referencedColumns: ["version"]
+          },
+        ]
       }
       calendar_events: {
         Row: {
@@ -186,25 +275,78 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           full_name: string | null
           id: string
           ign: string | null
+          last_login_at: string | null
+          notification_preferences: Json | null
+          status: string | null
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           full_name?: string | null
           id: string
           ign?: string | null
+          last_login_at?: string | null
+          notification_preferences?: Json | null
+          status?: string | null
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
           ign?: string | null
+          last_login_at?: string | null
+          notification_preferences?: Json | null
+          status?: string | null
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schema_migrations: {
+        Row: {
+          applied_at: string | null
+          created_at: string | null
+          description: string
+          id: string
+          sql_down: string | null
+          sql_up: string
+          version: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          sql_down?: string | null
+          sql_up: string
+          version: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          sql_down?: string | null
+          sql_up?: string
+          version?: string
         }
         Relationships: []
       }
@@ -302,6 +444,7 @@ export type Database = {
       }
       scrims: {
         Row: {
+          cancellation_reason: string | null
           created_at: string
           id: string
           notes: string | null
@@ -316,6 +459,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cancellation_reason?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -330,6 +474,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cancellation_reason?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -379,12 +524,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_migration: {
+        Args: { migration_version: string }
+        Returns: boolean
+      }
+      get_current_schema_version: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_pending_migrations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          version: string
+          description: string
+          sql_up: string
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          action_type: string
+          target_user_id?: string
+          action_details?: Json
+        }
+        Returns: undefined
       }
     }
     Enums: {

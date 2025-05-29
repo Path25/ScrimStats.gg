@@ -1,3 +1,4 @@
+
 # League of Legends Team Assistant (SCRIMSTATS.GG)
 
 This project provides a platform for managing League of Legends team activities, including scrims, player stats, and scheduling.
@@ -174,7 +175,7 @@ If using the desktop application to send game stats:
 -- PART 0: Enum Types (Run these first if they don't exist)
 DO $$ BEGIN CREATE TYPE public.app_role AS ENUM ('admin', 'coach', 'player'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.api_config_type AS ENUM ('RIOT', 'GRID'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-DO $$ BEGIN CREATE TYPE public.calendar_event_type AS ENUM ('scrim', 'tournament', 'vod_review', 'team_meeting', 'other'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.calendar_event_type_enum AS ENUM ('official', 'meeting', 'theory', 'other'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.game_result_enum AS ENUM ('Win', 'Loss', 'N/A'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.scrim_status_enum AS ENUM ('Scheduled', 'Completed', 'Cancelled'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
@@ -186,6 +187,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     ign TEXT, -- In-Game Name (e.g., Summoner Name for League of Legends)
     full_name TEXT,
+    status TEXT DEFAULT 'active',
+    notification_preferences JSONB DEFAULT '{"desktop_enabled": false, "scrim_reminders": false}'::jsonb,
+    last_login_at TIMESTAMPTZ,
+    approved_by UUID,
+    approved_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -257,6 +263,7 @@ CREATE TABLE IF NOT EXISTS public.scrims (
   status scrim_status_enum NOT NULL DEFAULT 'Scheduled'::scrim_status_enum,
   overall_result TEXT, -- e.g., "2-1 Win"
   notes TEXT,
+  cancellation_reason TEXT,
   recurrence_rule_id UUID REFERENCES public.scrim_recurrence_rules(id) ON DELETE SET NULL, -- For recurring scrims
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -298,9 +305,45 @@ CREATE TABLE IF NOT EXISTS public.calendar_events (
   event_date DATE NOT NULL,
   start_time TIME WITHOUT TIME ZONE,
   end_time TIME WITHOUT TIME ZONE,
-  type calendar_event_type NOT NULL,
+  type public.calendar_event_type_enum NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Schema Migrations Table Structure
+CREATE TABLE IF NOT EXISTS public.schema_migrations (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    version TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    sql_up TEXT NOT NULL,
+    sql_down TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    applied_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Applied Migrations Table Structure
+CREATE TABLE IF NOT EXISTS public.applied_migrations (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    migration_version TEXT NOT NULL UNIQUE,
+    applied_by uuid,
+    applied_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- App Settings Table Structure
+CREATE TABLE IF NOT EXISTS public.app_settings (
+    key TEXT PRIMARY KEY,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Admin Audit Log Table Structure
+CREATE TABLE IF NOT EXISTS public.admin_audit_log (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    admin_user_id uuid NOT NULL,
+    action TEXT NOT NULL,
+    target_user_id uuid,
+    details JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- PART 1.5: Core Helper Functions (Define after tables, before RLS policies that use them)
@@ -496,6 +539,30 @@ DROP POLICY IF EXISTS "Players can view calendar events" ON public.calendar_even
 CREATE POLICY "Players can view calendar events" ON public.calendar_events
     FOR SELECT USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_roles.user_id = auth.uid()));
 
+-- RLS for Schema Migrations (Admin only)
+ALTER TABLE public.schema_migrations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins can manage schema migrations" ON public.schema_migrations;
+CREATE POLICY "Admins can manage schema migrations" ON public.schema_migrations
+  FOR ALL USING (public.has_role(auth.uid(), 'admin'::app_role));
+
+-- RLS for Applied Migrations (Admin only)
+ALTER TABLE public.applied_migrations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins can manage applied migrations" ON public.applied_migrations;
+CREATE POLICY "Admins can manage applied migrations" ON public.applied_migrations
+  FOR ALL USING (public.has_role(auth.uid(), 'admin'::app_role));
+
+-- RLS for App Settings (Admin only)
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins can manage app settings" ON public.app_settings;
+CREATE POLICY "Admins can manage app settings" ON public.app_settings
+  FOR ALL USING (public.has_role(auth.uid(), 'admin'::app_role));
+
+-- RLS for Admin Audit Log (Admin only)
+ALTER TABLE public.admin_audit_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Admins can view audit log" ON public.admin_audit_log;
+CREATE POLICY "Admins can view audit log" ON public.admin_audit_log
+  FOR SELECT USING (public.has_role(auth.uid(), 'admin'::app_role));
+
 -- PART 3: Functions and Triggers
 
 -- Trigger function for updated_at
@@ -514,10 +581,6 @@ CREATE TRIGGER set_timestamp_profiles
 BEFORE UPDATE ON public.profiles
 FOR EACH ROW
 EXECUTE PROCEDURE public.update_updated_at_column();
-
--- For user_roles table
-DROP TRIGGER IF EXISTS set_timestamp_user_roles ON public.user_roles;
--- CREATE TRIGGER set_timestamp_user_roles -- No updated_at column in user_roles by default, add if needed
 
 -- For api_configurations table
 DROP TRIGGER IF EXISTS set_timestamp_api_configurations ON public.api_configurations;
@@ -575,6 +638,84 @@ BEFORE UPDATE ON public.calendar_events
 FOR EACH ROW
 EXECUTE PROCEDURE public.update_updated_at_column();
 
+-- Migration-related functions
+CREATE OR REPLACE FUNCTION public.get_pending_migrations()
+ RETURNS TABLE(version text, description text, sql_up text)
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$
+  SELECT sm.version, sm.description, sm.sql_up
+  FROM public.schema_migrations sm
+  WHERE sm.version NOT IN (
+    SELECT am.migration_version 
+    FROM public.applied_migrations am
+  )
+  ORDER BY sm.version;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_current_schema_version()
+ RETURNS text
+ LANGUAGE sql
+ SECURITY DEFINER
+AS $function$
+  SELECT COALESCE(
+    (SELECT sm.version 
+     FROM public.applied_migrations am
+     JOIN public.schema_migrations sm ON am.migration_version = sm.version
+     ORDER BY sm.created_at DESC 
+     LIMIT 1),
+    'no_migrations'
+  );
+$function$;
+
+CREATE OR REPLACE FUNCTION public.apply_migration(migration_version text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  migration_sql TEXT;
+  user_has_admin_role BOOLEAN;
+BEGIN
+  -- Check if user has admin role
+  SELECT public.has_role(auth.uid(), 'admin') INTO user_has_admin_role;
+  
+  IF NOT user_has_admin_role THEN
+    RAISE EXCEPTION 'Only admins can apply migrations';
+  END IF;
+  
+  -- Check if migration exists and hasn't been applied
+  SELECT sql_up INTO migration_sql
+  FROM public.schema_migrations
+  WHERE version = migration_version
+  AND version NOT IN (SELECT migration_version FROM public.applied_migrations);
+  
+  IF migration_sql IS NULL THEN
+    RETURN FALSE;
+  END IF;
+  
+  -- Execute the migration SQL
+  EXECUTE migration_sql;
+  
+  -- Record the migration as applied
+  INSERT INTO public.applied_migrations (migration_version, applied_by)
+  VALUES (migration_version, auth.uid());
+  
+  RETURN TRUE;
+END;
+$function$;
+
+-- Admin audit logging function
+CREATE OR REPLACE FUNCTION public.log_admin_action(action_type text, target_user_id uuid DEFAULT NULL::uuid, action_details jsonb DEFAULT NULL::jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  INSERT INTO public.admin_audit_log (admin_user_id, action, target_user_id, details)
+  VALUES (auth.uid(), action_type, target_user_id, action_details);
+END;
+$function$;
 
 -- Handle New User Trigger Function (Creates profile and assigns roles)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -615,4 +756,48 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- PART 4: Migration System Setup and Core Migration Records
+-- Insert initial migration records to track current state and core features
+INSERT INTO public.schema_migrations (version, description, sql_up, sql_down) VALUES
+('001_initial_schema', 'Initial database schema with all core tables', 'SELECT 1;', 'SELECT 1;'),
+('002_notification_preferences', 'Add notification preferences to profiles table', 'ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS notification_preferences JSONB DEFAULT ''{"desktop_enabled": false, "scrim_reminders": false}''::jsonb;', 'ALTER TABLE public.profiles DROP COLUMN IF EXISTS notification_preferences;'),
+('003_user_management_system', 'Add user roles, admin audit logging system, and app settings', 'SELECT 1; -- All components already created in initial schema', 'DROP TABLE IF EXISTS public.app_settings; DROP TABLE IF EXISTS public.admin_audit_log; DROP TABLE IF EXISTS public.user_roles; DROP TYPE IF EXISTS public.app_role;')
+ON CONFLICT (version) DO NOTHING;
+
+-- Mark all core migrations as applied since they're included in the initial schema
+INSERT INTO public.applied_migrations (migration_version, applied_by) VALUES
+('001_initial_schema', NULL),
+('002_notification_preferences', NULL),
+('003_user_management_system', NULL)
+ON CONFLICT (migration_version) DO NOTHING;
+
+-- Insert default app settings
+INSERT INTO public.app_settings (key, value) VALUES 
+  ('registration_enabled', 'true'::jsonb),
+  ('admin_approval_required', 'false'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
+-- Create trigger function for app_settings updated_at
+CREATE OR REPLACE FUNCTION update_app_settings_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for app_settings updated_at if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger 
+    WHERE tgname = 'app_settings_updated_at'
+  ) THEN
+    CREATE TRIGGER app_settings_updated_at
+      BEFORE UPDATE ON public.app_settings
+      FOR EACH ROW
+      EXECUTE FUNCTION update_app_settings_updated_at();
+  END IF;
+END $$;
 ```

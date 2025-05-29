@@ -78,6 +78,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else if (profileData) {
         console.log("Auth (Supabase): Profile data fetched:", profileData);
         setProfile(profileData as Profile);
+        
+        // Update last_login_at when profile is successfully fetched
+        await supabase
+          .from('profiles')
+          .update({ last_login_at: new Date().toISOString() })
+          .eq('id', userId);
       } else {
         console.log("Auth (Supabase): No profile data found for user:", userId);
         setProfile(null);

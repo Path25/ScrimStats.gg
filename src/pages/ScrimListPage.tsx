@@ -288,7 +288,14 @@ const ScrimListPage: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={scrim.status} />
+                        <div className="flex flex-col gap-1">
+                          <StatusBadge status={scrim.status} size="sm" />
+                          {scrim.status === 'Cancelled' && scrim.cancellation_reason && (
+                            <p className="text-xs text-muted-foreground italic">
+                              Reason: {scrim.cancellation_reason}
+                            </p>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {scrim.patch ? (

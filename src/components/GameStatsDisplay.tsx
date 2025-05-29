@@ -1,11 +1,15 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, Json } from '@/integrations/supabase/types';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import DetailedGameSummaryView from './DetailedGameSummaryView';
+import ManualGameDataDialog from './ManualGameDataDialog';
 import { LolGameSummaryData } from '@/types/leagueGameStats';
+import { useAuth } from '@/contexts/AuthContext';
 
 type GameStat = Tables<'game_stats'>;
 type Player = Tables<'players'>;
@@ -52,11 +56,15 @@ const renderSimpleStatValue = (value: Json) => {
 };
 
 const GameStatsDisplay: React.FC<GameStatsDisplayProps> = ({ scrimGameId, playersList, profilesList }) => {
+  const { user, isAdmin: authIsAdmin, isCoach: authIsCoach } = useAuth();
+  
   const { data: gameStats, isLoading, error } = useQuery<GameStat[], Error>({
     queryKey: ['gameStats', scrimGameId],
     queryFn: () => fetchGameStats(scrimGameId),
     enabled: !!scrimGameId,
   });
+
+  const canManageData = user && (authIsAdmin || authIsCoach);
 
   if (isLoading) {
     return (
@@ -77,7 +85,19 @@ const GameStatsDisplay: React.FC<GameStatsDisplayProps> = ({ scrimGameId, player
   }
 
   if (!gameStats || gameStats.length === 0) {
-    return <p className="text-muted-foreground py-4">No stats available for this game.</p>;
+    return (
+      <div className="py-4 space-y-3">
+        <p className="text-muted-foreground">No stats available for this game.</p>
+        {canManageData && (
+          <ManualGameDataDialog scrimGameId={scrimGameId}>
+            <Button variant="outline" size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Data Manually
+            </Button>
+          </ManualGameDataDialog>
+        )}
+      </div>
+    );
   }
 
   console.log(`[GameStatsDisplay] Raw gameStats for scrimGameId ${scrimGameId}:`, gameStats);
@@ -152,8 +172,19 @@ const GameStatsDisplay: React.FC<GameStatsDisplayProps> = ({ scrimGameId, player
           ))}
         </>
       )}
+      
       {!summaryStat && Object.keys(statsByPlayer).length === 0 && (
-         <p className="text-muted-foreground py-4">No specific stats found for display.</p>
+        <div className="py-4 space-y-3">
+          <p className="text-muted-foreground">No specific stats found for display.</p>
+          {canManageData && (
+            <ManualGameDataDialog scrimGameId={scrimGameId}>
+              <Button variant="outline" size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Data Manually
+              </Button>
+            </ManualGameDataDialog>
+          )}
+        </div>
       )}
     </div>
   );

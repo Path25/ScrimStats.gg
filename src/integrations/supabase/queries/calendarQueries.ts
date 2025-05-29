@@ -1,67 +1,48 @@
-import { supabase } from '@/integrations/supabase/client';
-import { CalendarEvent, EventType } from '@/types/event';
-import { Tables, TablesInsert } from '@/integrations/supabase/types';
+
+import { supabase } from '../client';
+import { CalendarEvent } from '@/types/event';
+import { TablesInsert } from '@/integrations/supabase/types';
 
 export const fetchScrimsAsCalendarEvents = async (): Promise<CalendarEvent[]> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    console.log("User not authenticated, cannot fetch scrims for calendar");
-    return [];
-  }
-
-  const { data: scrims, error } = await supabase
+  const { data, error } = await supabase
     .from('scrims')
-    .select('id, scrim_date, start_time, opponent, notes, status') // Added start_time
-    .eq('user_id', user.id);
+    .select('id, opponent, scrim_date, start_time, status')
+    .neq('status', 'Cancelled') // Filter out cancelled scrims
+    .order('scrim_date', { ascending: true });
 
   if (error) {
     console.error('Error fetching scrims for calendar:', error);
-    throw error;
+    throw new Error(`Failed to fetch scrims: ${error.message}`);
   }
 
-  if (!scrims) {
-    return [];
-  }
-
-  return scrims.map((scrim) => ({ // Ensure scrim type is inferred correctly or use Tables<'scrims'>
+  return (data || []).map(scrim => ({
     id: scrim.id,
-    date: new Date(scrim.scrim_date + 'T00:00:00'),
-    title: `Scrim vs ${scrim.opponent || 'Unknown'}`,
-    type: 'scrim' as EventType, // Explicitly cast to EventType
-    description: scrim.notes || undefined,
-    startTime: scrim.start_time || undefined, // Added startTime
-    // endTime is not available in the scrims table currently
+    title: `vs ${scrim.opponent}`,
+    date: new Date(scrim.scrim_date),
+    startTime: scrim.start_time || undefined,
+    type: 'scrim' as const,
+    description: `Scrim against ${scrim.opponent}`,
   }));
 };
 
 export const fetchGeneralCalendarEvents = async (): Promise<CalendarEvent[]> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    console.log("User not authenticated, cannot fetch general calendar events");
-    return [];
-  }
-
-  const { data: generalEvents, error } = await supabase
+  const { data, error } = await supabase
     .from('calendar_events')
-    .select('id, event_date, title, type, start_time, end_time, description')
-    .eq('user_id', user.id);
+    .select('*')
+    .order('event_date', { ascending: true });
 
   if (error) {
     console.error('Error fetching general calendar events:', error);
-    throw error;
+    throw new Error(`Failed to fetch calendar events: ${error.message}`);
   }
 
-  if (!generalEvents) {
-    return [];
-  }
-
-  return generalEvents.map((event: Tables<'calendar_events'>) => ({
+  return (data || []).map(event => ({
     id: event.id,
-    date: new Date(event.event_date + 'T00:00:00'), 
     title: event.title,
-    type: event.type as EventType, 
+    date: new Date(event.event_date),
     startTime: event.start_time || undefined,
     endTime: event.end_time || undefined,
+    type: event.type as 'official' | 'meeting' | 'theory' | 'other',
     description: event.description || undefined,
   }));
 };

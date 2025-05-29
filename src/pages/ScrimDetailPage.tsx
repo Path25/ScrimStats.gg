@@ -105,10 +105,12 @@ const fetchAllProfiles = async (): Promise<Profile[]> => {
 const ScrimDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { scrimId } = useParams<{ scrimId: string }>();
-  const { user, isAdmin: authIsAdmin, isCoach: authIsCoach } = useAuth(); // Use isAdmin and isCoach from AuthContext
+  const { user, isAdmin: authIsAdmin, isCoach: authIsCoach } = useAuth();
   const queryClient = useQueryClient();
 
   const [currentScrimNotes, setCurrentScrimNotes] = useState<string>('');
+  const [cancellationReason, setCancellationReason] = useState<string>('');
+  const [showCancellationDialog, setShowCancellationDialog] = useState(false);
   
   const scrimQueryKey = ['scrim', scrimId];
   const gamesQueryKey = ['scrimGames', scrimId];
@@ -154,10 +156,7 @@ const ScrimDetailPage: React.FC = () => {
     enabled: !!user,
   });
   
-  // Updated canManageThisScrim logic
   const canManageThisScrim = scrim && user && (authIsAdmin || authIsCoach);
-  
-  // Fix the type comparison issue by using string literals that match the enum values
   const isScrimActionable = scrim?.status === 'Scheduled' || scrim?.status === 'In Progress';
 
   useEffect(() => {
@@ -219,15 +218,19 @@ const ScrimDetailPage: React.FC = () => {
   });
 
   const updateScrimStatusMutation = useMutation({
-    mutationFn: async ({ status: newStatus }: { status: ScrimStatus }) => { // Renamed 'status' to 'newStatus' for clarity
+    mutationFn: async ({ status: newStatus, cancellation_reason }: { status: ScrimStatus; cancellation_reason?: string }) => {
       if (!scrimId || !user?.id) throw new Error("Scrim ID or User ID is missing.");
       if (!canManageThisScrim) throw new Error("You do not have permission to update this scrim's status.");
 
       console.log(`Updating scrim status to: ${newStatus}`);
-      const updateObject: Partial<Scrim> = { status: newStatus, updated_at: new Date().toISOString() };
+      const updateObject: Partial<Scrim> = { 
+        status: newStatus, 
+        updated_at: new Date().toISOString(),
+        ...(cancellation_reason && { cancellation_reason })
+      };
       
       const currentScrimData = queryClient.getQueryData<Scrim>(scrimQueryKey);
-      const oldStatus = currentScrimData?.status; // The status before this update
+      const oldStatus = currentScrimData?.status;
 
       if (newStatus === 'Completed') {
         const currentGamesData = queryClient.getQueryData<ScrimGame[]>(gamesQueryKey) || [];
@@ -239,14 +242,10 @@ const ScrimDetailPage: React.FC = () => {
         } else {
           updateObject.overall_result = '0W-0L-0D'; 
         }
-      } else { // newStatus is NOT 'Completed'
+      } else {
         if (oldStatus === 'Completed') {
-          // If the scrim was previously 'Completed' and is now being changed to something else,
-          // clear the overall_result.
           updateObject.overall_result = null;
         }
-        // If oldStatus was not 'Completed', overall_result likely doesn't need changing
-        // or is already null/N/A.
       }
       
       const { data, error } = await supabase
@@ -267,10 +266,21 @@ const ScrimDetailPage: React.FC = () => {
     onSuccess: (updatedScrim) => {
       if (updatedScrim) {
         queryClient.setQueryData(scrimQueryKey, (oldData: Scrim | null | undefined) => 
-          oldData ? { ...oldData, status: updatedScrim.status, updated_at: updatedScrim.updated_at, overall_result: updatedScrim.overall_result } : updatedScrim
+          oldData ? { 
+            ...oldData, 
+            status: updatedScrim.status, 
+            updated_at: updatedScrim.updated_at, 
+            overall_result: updatedScrim.overall_result,
+            cancellation_reason: updatedScrim.cancellation_reason 
+          } : updatedScrim
         );
-        queryClient.invalidateQueries({ queryKey: scrimsListQueryKey }); 
+        queryClient.invalidateQueries({ queryKey: scrimsListQueryKey });
+        queryClient.invalidateQueries({ queryKey: ['scrimCalendarEvents'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-scrims'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-upcoming'] });
         toast.success(`Scrim status updated to ${updatedScrim.status}.`);
+        setShowCancellationDialog(false);
+        setCancellationReason('');
       }
     },
     onError: (error: Error) => {
@@ -338,6 +348,13 @@ const ScrimDetailPage: React.FC = () => {
         toast.error("Failed to copy Game ID.");
         console.error('Failed to copy text: ', err);
       });
+  };
+
+  const handleCancelScrim = () => {
+    updateScrimStatusMutation.mutate({ 
+      status: 'Cancelled', 
+      cancellation_reason: cancellationReason 
+    });
   };
 
   const scrimTitle = scrimId ? `Scrim Detail (ID: ${scrimId})` : "Scrim Detail";
@@ -413,6 +430,11 @@ const ScrimDetailPage: React.FC = () => {
                   'text-gray-500'
                 }`}>{scrim.status}</span></p>
               <p>Overall Result: {scrim.overall_result || 'N/A'}</p>
+              {scrim.status === 'Cancelled' && scrim.cancellation_reason && (
+                <p className="text-red-600 mt-2">
+                  <strong>Cancellation Reason:</strong> {scrim.cancellation_reason}
+                </p>
+              )}
             </CardContent>
             {canManageThisScrim && isScrimActionable && (
               <CardFooter className="flex gap-2 justify-end">
@@ -420,51 +442,31 @@ const ScrimDetailPage: React.FC = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => updateScrimStatusMutation.mutate({ status: 'Completed' })}
-                  disabled={updateScrimStatusMutation.isPending} // Simplified disabled condition
+                  disabled={updateScrimStatusMutation.isPending}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" /> Mark as Completed
                 </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      disabled={updateScrimStatusMutation.isPending} // Simplified disabled condition
-                    >
-                      <XCircle className="mr-2 h-4 w-4" /> Cancel Scrim
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action will mark the scrim as Cancelled. This cannot be undone easily.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Back</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => updateScrimStatusMutation.mutate({ status: 'Cancelled' })}
-                        className="bg-destructive hover:bg-destructive/90"
-                      >
-                        Confirm Cancel
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => setShowCancellationDialog(true)}
+                  disabled={updateScrimStatusMutation.isPending}
+                >
+                  <XCircle className="mr-2 h-4 w-4" /> Cancel Scrim
+                </Button>
               </CardFooter>
             )}
-             {canManageThisScrim && scrim.status === 'Cancelled' && (
-                <CardFooter className="flex justify-end">
-                    <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => updateScrimStatusMutation.mutate({ status: 'Scheduled' })}
-                        disabled={updateScrimStatusMutation.isPending}
-                    >
-                        Re-schedule Scrim
-                    </Button>
-                </CardFooter>
+            {canManageThisScrim && scrim.status === 'Cancelled' && (
+              <CardFooter className="flex justify-end">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => updateScrimStatusMutation.mutate({ status: 'Scheduled' })}
+                  disabled={updateScrimStatusMutation.isPending}
+                >
+                  Re-schedule Scrim
+                </Button>
+              </CardFooter>
             )}
           </Card>
 
@@ -560,25 +562,29 @@ const ScrimDetailPage: React.FC = () => {
               ))}
             </Accordion>
           ) : (
-            <EmptyState
-              icon={Target}
-              title="No game data available"
-              description={
-                canManageThisScrim && isScrimActionable 
-                  ? "This scrim doesn't have any recorded games yet. Add your first game to start tracking match performance and statistics."
-                  : "This scrim doesn't have any recorded games. Games can only be added when the scrim is active."
-              }
-              action={
-                canManageThisScrim && isScrimActionable && scrimId ? {
-                  label: "Add First Game",
-                  onClick: () => {
-                    // This would trigger the AddScrimGameDialog - the actual implementation would depend on how the dialog is structured
-                    console.log("Add game clicked");
-                  },
-                  variant: "gaming" as const
-                } : undefined
-              }
-            />
+            canManageThisScrim && isScrimActionable && scrimId ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Target className="h-16 w-16 text-muted-foreground/50" />
+                <div className="text-center space-y-2">
+                  <h3 className="text-xl font-semibold text-foreground">No game data available</h3>
+                  <p className="text-muted-foreground max-w-md">
+                    This scrim doesn't have any recorded games yet. Add your first game to start tracking match performance and statistics.
+                  </p>
+                </div>
+                <AddScrimGameDialog scrimId={scrimId}>
+                  <Button variant="gaming">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add First Game
+                  </Button>
+                </AddScrimGameDialog>
+              </div>
+            ) : (
+              <EmptyState
+                icon={Target}
+                title="No game data available"
+                description="This scrim doesn't have any recorded games. Games can only be added when the scrim is active."
+              />
+            )
           )}
           
           <Card className="scrim-card">
@@ -610,6 +616,36 @@ const ScrimDetailPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Cancellation Dialog */}
+        <AlertDialog open={showCancellationDialog} onOpenChange={setShowCancellationDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel Scrim</AlertDialogTitle>
+              <AlertDialogDescription>
+                Please provide a reason for cancelling this scrim. This will help your team track cancellation patterns.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+              <Textarea
+                placeholder="e.g., Opponent cancelled, Player unavailable, Technical issues..."
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Back</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleCancelScrim}
+                disabled={!cancellationReason.trim() || updateScrimStatusMutation.isPending}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {updateScrimStatusMutation.isPending ? 'Cancelling...' : 'Confirm Cancel'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </TooltipProvider>
     </Layout>
   );

@@ -44,7 +44,7 @@ const DashboardPage: React.FC = () => {
     }
   });
 
-  // Fetch upcoming scrims/calendar events
+  // Fetch upcoming scrims/calendar events - exclude cancelled scrims
   const { data: upcomingEvents, isLoading: isUpcomingLoading, error: upcomingError } = useQuery({
     queryKey: ['dashboard-upcoming'],
     queryFn: async () => {
@@ -53,6 +53,7 @@ const DashboardPage: React.FC = () => {
         .from('scrims')
         .select('id, opponent, scrim_date, start_time')
         .gte('scrim_date', today.toISOString().split('T')[0])
+        .neq('status', 'Cancelled') // Filter out cancelled scrims
         .order('scrim_date', { ascending: true })
         .limit(5);
       
@@ -61,9 +62,117 @@ const DashboardPage: React.FC = () => {
     }
   });
 
+  // Calculate trends and changes
+  const calculateTrendsAndChanges = () => {
+    if (isScrimsLoading || !scrims) return null;
+
+    const today = new Date();
+    const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
+    
+    console.log('Date calculations:', {
+      today: today.toISOString(),
+      oneWeekAgo: oneWeekAgo.toISOString(),
+      twoWeeksAgo: twoWeeksAgo.toISOString(),
+      totalScrims: scrims.length
+    });
+    
+    // Filter for completed scrims only (those with games that have results)
+    const completedScrims = scrims.filter(scrim => 
+      scrim.scrim_games && scrim.scrim_games.length > 0
+    );
+    
+    // Split completed scrims into recent week and previous week
+    const recentCompletedScrims = completedScrims.filter(scrim => 
+      new Date(scrim.scrim_date) >= oneWeekAgo
+    );
+    const previousCompletedScrims = completedScrims.filter(scrim => {
+      const scrimDate = new Date(scrim.scrim_date);
+      return scrimDate >= twoWeeksAgo && scrimDate < oneWeekAgo;
+    });
+
+    // Split ALL scrims (not just completed) for total scrims calculation
+    const recentAllScrims = scrims.filter(scrim => 
+      new Date(scrim.scrim_date) >= oneWeekAgo
+    );
+
+    console.log('Completed scrim filtering:', {
+      totalCompletedScrims: completedScrims.length,
+      recentCompletedScrims: recentCompletedScrims.length,
+      previousCompletedScrims: previousCompletedScrims.length,
+      recentAllScrims: recentAllScrims.length,
+      recentCompletedScrimDates: recentCompletedScrims.map(s => s.scrim_date),
+      previousCompletedScrimDates: previousCompletedScrims.map(s => s.scrim_date)
+    });
+
+    // Calculate recent week stats (completed games only)
+    const recentGames = recentCompletedScrims.flatMap(scrim => scrim.scrim_games);
+    const recentTotalGames = recentGames.length;
+    const recentWins = recentGames.filter(game => game.result === 'Win').length;
+    const recentWinRate = recentTotalGames > 0 ? Math.round((recentWins / recentTotalGames) * 100) : 0;
+
+    // Calculate previous week stats (completed games only)
+    const previousGames = previousCompletedScrims.flatMap(scrim => scrim.scrim_games);
+    const previousTotalGames = previousGames.length;
+    const previousWins = previousGames.filter(game => game.result === 'Win').length;
+    const previousWinRate = previousTotalGames > 0 ? Math.round((previousWins / previousTotalGames) * 100) : 0;
+
+    // Calculate changes - fix the logic here
+    const scrimsChange = recentAllScrims.length; // Show scrims from this week only
+    
+    // Fix win rate change calculation - only compare completed games
+    let winRateChange;
+    if (previousTotalGames === 0 && recentTotalGames > 0) {
+      // If we had no completed games before and now we do, show the current win rate as positive change
+      winRateChange = recentWinRate;
+    } else if (recentTotalGames === 0 && previousTotalGames > 0) {
+      // If we had completed games before but none now, show no change (since current week has no completed games)
+      winRateChange = 0;
+    } else if (recentTotalGames === 0 && previousTotalGames === 0) {
+      // If no completed games in either period, no change
+      winRateChange = 0;
+    } else {
+      // Normal case - difference between win rates of completed games
+      winRateChange = recentWinRate - previousWinRate;
+    }
+    
+    // Fix upcoming change - show actual upcoming count
+    const upcomingChange = upcomingEvents?.length || 0;
+
+    // Calculate active players - show current count
+    const activePlayers = players?.length || 0;
+    
+    console.log('Calculated changes:', {
+      scrimsChange,
+      winRateChange,
+      upcomingChange,
+      recentWinRate,
+      previousWinRate,
+      recentTotalGames,
+      previousTotalGames,
+      recentCompletedScrims: recentCompletedScrims.length,
+      previousCompletedScrims: previousCompletedScrims.length,
+      recentAllScrims: recentAllScrims.length
+    });
+    
+    return {
+      scrimsChange,
+      winRateChange,
+      upcomingChange,
+      activePlayers,
+      recentWinRate,
+      previousWinRate,
+      recentTotalGames,
+      previousTotalGames
+    };
+  };
+
   // Calculate KPIs from fetched data
   const calculateKPIs = () => {
     if (isScrimsLoading || !scrims) return null;
+
+    const trends = calculateTrendsAndChanges();
+    if (!trends) return null;
 
     // Total scrims played
     const totalScrims = scrims.length;
@@ -87,8 +196,24 @@ const DashboardPage: React.FC = () => {
       : null;
     
     const rosterUpdateText = lastRosterUpdate 
-      ? `Updated ${new Date().getDate() - lastRosterUpdate.getDate() <= 1 ? 'today' : new Date().getDate() - lastRosterUpdate.getDate() + ' days ago'}`
+      ? `Updated ${Math.max(0, Math.floor((new Date().getTime() - lastRosterUpdate.getTime()) / (1000 * 60 * 60 * 24)))} days ago`
       : 'No updates';
+
+    // Format change values properly
+    const formatChange = (value: number, isPercentage: boolean = false) => {
+      if (value === 0) return "0";
+      const prefix = value > 0 ? "+" : "";
+      const suffix = isPercentage ? "%" : "";
+      return `${prefix}${value}${suffix}`;
+    };
+
+    console.log('Final KPI calculations:', {
+      totalScrims,
+      winRate,
+      upcomingScrimsCount,
+      activePlayers,
+      trendsData: trends
+    });
 
     return [
       { 
@@ -99,7 +224,7 @@ const DashboardPage: React.FC = () => {
         trendIcon: totalScrims > 0 ? TrendingUp : null,
         gradient: "from-blue-500/10 to-cyan-500/10",
         iconColor: "text-blue-500",
-        change: totalScrims > 0 ? "+12%" : "0%"
+        change: formatChange(trends.scrimsChange)
       },
       { 
         title: "Win Rate", 
@@ -109,7 +234,7 @@ const DashboardPage: React.FC = () => {
         trendIcon: winRate >= 50 ? TrendingUp : TrendingDown,
         gradient: winRate >= 50 ? "from-green-500/10 to-emerald-500/10" : "from-red-500/10 to-orange-500/10",
         iconColor: winRate >= 50 ? "text-green-500" : "text-red-500",
-        change: winRate >= 50 ? "+5%" : "-3%"
+        change: formatChange(trends.winRateChange, true)
       },
       { 
         title: "Upcoming Blocks", 
@@ -119,7 +244,7 @@ const DashboardPage: React.FC = () => {
         trendIcon: Calendar,
         gradient: "from-purple-500/10 to-pink-500/10",
         iconColor: "text-purple-500",
-        change: upcomingScrimsCount > 0 ? "+2" : "0"
+        change: formatChange(trends.upcomingChange)
       },
       { 
         title: "Active Players", 
@@ -129,7 +254,7 @@ const DashboardPage: React.FC = () => {
         trendIcon: Clock,
         gradient: "from-amber-500/10 to-orange-500/10",
         iconColor: "text-amber-500",
-        change: "+1"
+        change: activePlayers > 0 ? "Active" : "0"
       },
     ];
   };

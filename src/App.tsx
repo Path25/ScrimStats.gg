@@ -1,101 +1,93 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
-
-// Import new pages
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import DashboardPage from "./pages/DashboardPage";
-import SettingsPage from "./pages/SettingsPage";
-import CalendarPage from "./pages/CalendarPage";
-import ScrimListPage from "./pages/ScrimListPage";
-import ScrimDetailPage from "./pages/ScrimDetailPage";
-import PlayersPage from "./pages/PlayersPage";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
+import { Toaster } from '@/components/ui/toaster';
+import PrivateRoute from './components/PrivateRoute';
+import PublicRoute from './components/PublicRoute';
+import DashboardPage from './pages/DashboardPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import SettingsPage from './pages/SettingsPage';
+import CalendarPage from './pages/CalendarPage';
+import ScrimListPage from './pages/ScrimListPage';
+import PlayersPage from './pages/PlayersPage';
+import PlayerAnalyticsPage from './pages/PlayerAnalyticsPage';
+import SoloQTrackerPage from './pages/SoloQTrackerPage';
+import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
 
-interface ProtectedRouteProps {
-  children: JSX.Element;
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ThemeProvider>
+          <NotificationProvider>
+            <Toaster />
+            <Router>
+              <Routes>
+                <Route path="/" element={
+                  <PrivateRoute>
+                    <DashboardPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/dashboard" element={
+                  <PrivateRoute>
+                    <DashboardPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/calendar" element={
+                  <PrivateRoute>
+                    <CalendarPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/scrims" element={
+                  <PrivateRoute>
+                    <ScrimListPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/players" element={
+                  <PrivateRoute>
+                    <PlayersPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/player-analytics" element={
+                  <PrivateRoute>
+                    <PlayerAnalyticsPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/soloq-tracker" element={
+                  <PrivateRoute>
+                    <SoloQTrackerPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/settings" element={
+                  <PrivateRoute>
+                    <SettingsPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/login" element={
+                  <PublicRoute>
+                    <LoginPage />
+                  </PublicRoute>
+                } />
+                <Route path="/register" element={
+                  <PublicRoute>
+                    <RegisterPage />
+                  </PublicRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Router>
+          </NotificationProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { session, authLoading } = useAuth();
-  console.log('ProtectedRoute RENDER: authLoading:', authLoading, 'session:', session);
-
-  if (authLoading) {
-    console.log('ProtectedRoute: Condition met (authLoading is true). Showing "Authenticating..."');
-    return <div className="min-h-screen flex items-center justify-center bg-background"><p>Authenticating...</p></div>;
-  }
-
-  if (!session) {
-    console.log('ProtectedRoute: Condition met (!session is true, authLoading is false). Redirecting to /login');
-    return <Navigate to="/login" replace />;
-  }
-  console.log('ProtectedRoute: Conditions not met for loading or redirect. Rendering children.');
-  return children;
-};
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AppRoutes />
-          </TooltipProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
-
-const AppRoutes = () => {
-  const { session, authLoading } = useAuth();
-  // Log at the very start of the component function
-  console.log('AppRoutes RENDER: authLoading:', authLoading, 'session:', session);
-
-  if (authLoading) {
-    console.log('AppRoutes: Condition met (authLoading is true). Showing "Loading application..."');
-    return <div className="min-h-screen flex items-center justify-center bg-background"><p>Loading application...</p></div>;
-  }
-  
-  console.log('AppRoutes: authLoading is false. Proceeding to render routes.');
-  return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-      <Route path="/register" element={session ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
-      
-      {/* Root path: Redirect based on auth status once authLoading is false */}
-      <Route 
-        path="/" 
-        element={
-          // authLoading is already confirmed false at this point by the check above
-          session ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
-        } 
-      />
-
-      {/* Protected routes */}
-      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-      <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-      <Route path="/scrims" element={<ProtectedRoute><ScrimListPage /></ProtectedRoute>} /> 
-      <Route path="/scrims/:scrimId" element={<ProtectedRoute><ScrimDetailPage /></ProtectedRoute>} />
-      <Route path="/players" element={<ProtectedRoute><PlayersPage /></ProtectedRoute>} />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-};
-
 export default App;
-
