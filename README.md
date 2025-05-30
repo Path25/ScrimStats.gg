@@ -777,7 +777,7 @@ ON CONFLICT (migration_version) DO NOTHING;
 -- Insert default app settings
 INSERT INTO public.app_settings (key, value) VALUES 
   ('registration_enabled', 'true'::jsonb),
-  ('admin_approval_required', 'false'::jsonb)
+  ('require_admin_approval', 'false'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
 -- Create trigger function for app_settings updated_at
