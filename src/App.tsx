@@ -14,6 +14,7 @@ import RegisterPage from './pages/RegisterPage';
 import SettingsPage from './pages/SettingsPage';
 import CalendarPage from './pages/CalendarPage';
 import ScrimListPage from './pages/ScrimListPage';
+import ScrimDetailPage from './pages/ScrimDetailPage';
 import PlayersPage from './pages/PlayersPage';
 import PlayerAnalyticsPage from './pages/PlayerAnalyticsPage';
 import SoloQTrackerPage from './pages/SoloQTrackerPage';
@@ -48,6 +49,11 @@ function App() {
                 <Route path="/scrims" element={
                   <PrivateRoute>
                     <ScrimListPage />
+                  </PrivateRoute>
+                } />
+                <Route path="/scrims/:scrimId" element={
+                  <PrivateRoute>
+                    <ScrimDetailPage />
                   </PrivateRoute>
                 } />
                 <Route path="/players" element={
